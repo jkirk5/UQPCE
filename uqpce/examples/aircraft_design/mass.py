@@ -5,7 +5,7 @@ import numpy as np
 #this can be done at the top level of heierarchy using balance comp
 #but fuck it we ball
 
-def range(SFC,V,LoverD,m_total,m_fuel):
+def breguet_range(SFC,V,LoverD,m_total,m_fuel):
 
     return (V/SFC)*(LoverD)*np.log((m_total)/(m_total-m_fuel))
 
@@ -80,7 +80,7 @@ class Residual(om.ImplicitComponent):
         residuals['m_total'] = m_total - m_empty - m_fuel - m_payload
 
         #residual associated with m_fuel key
-        residuals['m_fuel'] = range(SFC,V,LoverD,m_total,m_fuel) - R_target
+        residuals['m_fuel'] = breguet_range(SFC,V,LoverD,m_total,m_fuel) - R_target
 
 
     #not always possible for equations that have no solution to the 
@@ -136,14 +136,16 @@ class Residual(om.ImplicitComponent):
 
         #other derivatives of residuals for 
         #optimization and derivative propagation
-        # Mass residual derivatives
+        # Mass residual derivatives, which implicit comp turns into 
+        # derivatives of the state
         partials['m_total','V_cruise'] = 0
         partials['m_total','SFC'] = 0
         partials['m_total','L/D'] = 0
         partials['m_total','m_empty'] = -1
 
-        R = range(SFC,V,LoverD,m_total,m_fuel)
-        #Range residual derivatives
+        R = breguet_range(SFC,V,LoverD,m_total,m_fuel)
+        # Range residual derivatives, which implicit comp turns into 
+        # derivatives of the state
         partials['m_fuel','V_cruise'] = R/V
         partials['m_fuel','SFC'] = -R/SFC
         partials['m_fuel','L/D'] = R/LoverD
@@ -158,7 +160,7 @@ class Residual(om.ImplicitComponent):
         
         det_J = J11*J22 - J12*J21
 
-        self.inv_Jacobian = np.array([[J22,-J12],
+        self.inv_Jacobian = (1/det_J) * np.array([[J22,-J12],
                                  [-J21,J11]])
 
 
