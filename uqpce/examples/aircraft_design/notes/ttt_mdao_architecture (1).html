@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TTT Intern MDAO Architecture — Coupled Breguet Range</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f5f6f8;--card:#fff;--text:#1a2a3a;--t2:#556270;--t3:#8a96a6;--bdr:#d8dee6;--blt:#eceff3;
+  --navy:#0f2b46;--blue:#2e86de;--coup:#c44878;
+  --font:'IBM Plex Sans',system-ui,sans-serif;--mono:'IBM Plex Mono',monospace}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);
+  background-image:linear-gradient(rgba(46,134,222,.04) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(46,134,222,.04) 1px,transparent 1px);background-size:32px 32px}
+.pg{max-width:1260px;margin:0 auto;padding:24px 16px 40px}
+header{text-align:center;margin-bottom:16px}
+header h1{font-size:22px;font-weight:700;color:var(--navy)}
+header p{font-size:13px;color:var(--t2);max-width:520px;margin:4px auto 0}
+.leg{display:flex;justify-content:center;flex-wrap:wrap;gap:5px 16px;margin:10px 0;font-size:11px;color:var(--t2)}
+.li{display:flex;align-items:center;gap:5px}.ld{width:11px;height:11px;border-radius:3px;flex-shrink:0}
+.ct{display:flex;justify-content:center;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.cb{font-family:var(--font);font-size:11px;font-weight:500;padding:5px 12px;border-radius:5px;
+  border:1px solid var(--bdr);background:var(--card);color:var(--t2);cursor:pointer;transition:.15s}
+.cb:hover{border-color:var(--blue);color:var(--blue)}.cb.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.wr{background:var(--card);border:1px solid var(--bdr);border-radius:14px;padding:24px 16px 20px;overflow-x:auto;box-shadow:0 1px 3px rgba(0,0,0,.03)}
+.dia{position:relative;width:1180px;height:1560px;margin:0 auto}
+svg.cn{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0}
+.arr{fill:none;stroke-width:1.1;transition:opacity .25s,stroke-width .25s}
+.arr-c{stroke:var(--coup)!important;stroke-width:1.6;stroke-dasharray:6 4}
+.n{position:absolute;border-radius:9px;border:1.5px solid var(--bdr);background:var(--card);
+  padding:9px 12px;z-index:3;cursor:pointer;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,.03)}
+.n:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,.07);z-index:10}
+.n.hl{box-shadow:0 0 0 3px rgba(46,134,222,.18),0 4px 16px rgba(0,0,0,.1);border-color:var(--blue);z-index:10}
+.nm{font-weight:600;font-size:12px;margin-bottom:2px;display:flex;align-items:center;gap:5px}
+.tg{font-size:8px;font-weight:600;padding:1px 5px;border-radius:3px;text-transform:uppercase;letter-spacing:.4px}
+.eq{font-family:var(--mono);font-size:10.5px;color:var(--t2);line-height:1.5;margin:3px 0 0;white-space:pre-line}
+.io{font-size:9.5px;color:var(--t3);line-height:1.4;margin-top:4px;border-top:1px solid var(--blt);padding-top:3px}
+.io b{color:var(--t2);font-weight:500}
+.dv{border-color:#92bde6;background:#e8f1fb}.dv .nm{color:#0c447c}
+.sv{border-color:var(--coup);background:#fce4ec;border-style:solid}.sv .nm{color:#9e2060}
+.uv{border-color:#e8c464;background:#fef6e6;border-style:dashed}.uv .nm{color:#7a5800}.uv .eq{color:#9a7828}
+.ob{border-color:#8cc460;background:#edf6e8}.ob .nm{color:#2e6e16}
+.co{border-color:#e89090;background:#fdeaea}.co .nm{color:#9e2020}
+.cpn{border-color:var(--coup);border-width:2px}.cpn .nm{color:var(--coup)}
+.zone{position:absolute;border-radius:12px;border:1.5px dashed;z-index:0;transition:background .25s}
+.zl{position:absolute;top:-10px;left:14px;font-size:10px;font-weight:600;padding:2px 8px;border-radius:5px;white-space:nowrap;letter-spacing:.2px;z-index:1}
+.za{border-color:#7aaed8;background:rgba(122,174,216,.04)}.za .zl{background:#2e6da8;color:#e6f0fc}.za.gl{background:rgba(122,174,216,.12)}
+.zb{border-color:#7db848;background:rgba(125,184,72,.04)}.zb .zl{background:#4a7a28;color:#edf6e8}.zb.gl{background:rgba(125,184,72,.12)}
+.zc{border-color:#d88a6a;background:rgba(216,138,106,.04)}.zc .zl{background:#b0502a;color:#fef0ea}.zc.gl{background:rgba(216,138,106,.12)}
+.ct2{position:absolute;font-size:9px;font-weight:600;color:var(--coup);background:#fce4ec;padding:2px 8px;border-radius:8px;z-index:4;white-space:nowrap;pointer-events:none}
+.dim .arr{opacity:.06!important}.dim .arr.ha{opacity:.7!important;stroke-width:2!important}
+.dim .arr-c.ha{stroke-width:2.5!important}.dim .n{opacity:.25}.dim .n.hl{opacity:1}
+.dim .zone{opacity:.25}.dim .zone.gl{opacity:1}
+.uv-hidden .n.uv{display:none}
+</style>
+</head>
+<body>
+<div class="pg">
+<header><h1>Coupled Breguet range — MDAO architecture</h1>
+<p>Click any box to trace its connections. Use buttons to highlight paths or intern scopes.</p></header>
+<div class="leg">
+<div class="li"><div class="ld" style="background:#92bde6"></div>Design variable</div>
+<div class="li"><div class="ld" style="background:#fce4ec;border:1px solid var(--coup)"></div>Solver state</div>
+<div class="li"><div class="ld" style="background:#e8c464;border:1px dashed #c8a030"></div>Uncertain variable</div>
+<div class="li"><div class="ld" style="background:#fff;border:1px solid #bbb"></div>Subsystem</div>
+<div class="li"><div class="ld" style="background:#8cc460"></div>Objective</div>
+<div class="li"><div class="ld" style="background:#e89090"></div>Constraint</div>
+<div class="li"><div class="ld" style="background:#fce4ec;border:1px dashed var(--coup)"></div>Coupling</div>
+</div>
+<div class="ct" id="ct">
+<button class="cb on" data-f="reset">Reset</button>
+<button class="cb" data-f="coupling">Coupling loops</button>
+<button class="cb" data-f="ia">Intern A — aero</button>
+<button class="cb" data-f="ib">Intern B — prop/cost</button>
+<button class="cb" data-f="ic">Intern C — weights</button>
+<button class="cb on" id="uv-toggle">Uncertain vars: on</button>
+</div>
+<div class="wr"><div class="dia" id="dia">
+
+<svg class="cn" viewBox="0 0 1180 1560">
+<defs>
+<marker id="ah" viewBox="0 0 10 8" refX="9" refY="4" markerWidth="7" markerHeight="5" orient="auto-start-reverse">
+<path d="M1 1L9 4L1 7" fill="none" stroke="context-stroke" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></marker>
+<marker id="ahp" viewBox="0 0 10 8" refX="9" refY="4" markerWidth="7" markerHeight="5" orient="auto-start-reverse">
+<path d="M1 1L9 4L1 7" fill="none" stroke="var(--coup)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></marker>
+</defs>
+<!-- S → Aero -->
+<path class="arr" stroke="#7a8a9a" data-t="s aero" d="M95,70 L95,108 L155,108 L155,410" marker-end="url(#ah)"/>
+<!-- S → Weights -->
+<path class="arr" stroke="#7a8a9a" data-t="s weights" d="M125,70 L125,114 L585,114 L585,410" marker-end="url(#ah)"/>
+<!-- AR → Aero -->
+<path class="arr" stroke="#7a8a9a" data-t="ar aero" d="M275,70 L275,102 L190,102 L190,410" marker-end="url(#ah)"/>
+<!-- AR → Weights -->
+<path class="arr" stroke="#7a8a9a" data-t="ar weights" d="M305,70 L305,120 L615,120 L615,410" marker-end="url(#ah)"/>
+<!-- V → Weights (structural sizing via q_design) -->
+<path class="arr" stroke="#7a8a9a" data-t="vcruise weights" d="M500,70 L500,156 L645,156 L645,410" marker-end="url(#ah)"/>
+<!-- V → Prop -->
+<path class="arr" stroke="#7a8a9a" data-t="vcruise prop" d="M515,70 L515,208" marker-end="url(#ah)"/>
+<!-- V → Aero -->
+<path class="arr" stroke="#7a8a9a" data-t="vcruise aero" d="M488,70 L488,126 L125,126 L125,410" marker-end="url(#ah)"/>
+<!-- V → Breguet -->
+<path class="arr" stroke="#7a8a9a" data-t="vcruise breguet" d="M470,70 L470,132 L48,132 L48,895 L110,895" marker-end="url(#ah)"/>
+<!-- V → DOC -->
+<path class="arr" stroke="#7a8a9a" data-t="vcruise doc" d="M540,70 L540,126 L1140,126 L1140,1100 L910,1100" marker-end="url(#ah)"/>
+<!-- SFC_tech → Prop -->
+<path class="arr" stroke="#7a8a9a" data-t="sfctech prop" d="M720,102 L720,178 L572,178 L572,208" marker-end="url(#ah)"/>
+<!-- SFC_tech → EngWt -->
+<path class="arr" stroke="#7a8a9a" data-t="sfctech engwt" d="M760,102 L760,188 L960,188 L960,410" marker-end="url(#ah)"/>
+<!-- SFC_tech → DOC -->
+<path class="arr" stroke="#7a8a9a" data-t="sfctech doc" d="M800,102 L800,190 L1152,190 L1152,1120 L910,1120" marker-end="url(#ah)"/>
+<!-- m_fuel (solver state) → TotalMass [coupling - dashed pink] -->
+<path class="arr arr-c" data-t="mfuel totalmass coupling" d="M964,102 L964,178 L412,178 L412,730" marker-end="url(#ahp)"/>
+<!-- m_fuel → Breguet (coupling) -->
+<path class="arr arr-c" data-t="mfuel breguet coupling" d="M944,102 L944,184 L54,184 L54,907 L110,907" marker-end="url(#ahp)"/>
+<!-- m_fuel → DOC (coupling) -->
+<path class="arr arr-c" data-t="mfuel doc coupling" d="M984,102 L984,178 L1146,178 L1146,1108 L910,1108" marker-end="url(#ahp)"/>
+
+<!-- Prop → Breguet (SFC) -->
+<path class="arr" stroke="#7a8a9a" data-t="prop breguet" d="M436,265 L408,265 L408,360 L60,360 L60,883 L110,883" marker-end="url(#ah)"/>
+<!-- EngWt → Weights (m_engine) -->
+<path class="arr" stroke="#7a8a9a" data-t="engwt weights" d="M945,530 L945,675 L770,675 L770,525" marker-end="url(#ah)"/>
+<!-- Aero L/D → Breguet -->
+<path class="arr" stroke="#7a8a9a" data-t="aero breguet" d="M185,530 L185,710 L66,710 L66,871 L110,871" marker-end="url(#ah)"/>
+<!-- Aero CL → Constraints -->
+<path class="arr" stroke="#7a8a9a" data-t="aero constraints" d="M210,530 L210,700 L22,700 L22,1400 L170,1400" marker-end="url(#ah)"/>
+
+<!-- COUPLING: Weights → TotalMass -->
+<path class="arr arr-c" data-t="weights totalmass coupling" d="M764,530 L780,530 L780,690 L585,690 L585,730" marker-end="url(#ahp)"/>
+<!-- COUPLING: TotalMass → Aero -->
+<path class="arr arr-c" data-t="totalmass aero coupling" d="M420,840 L420,870 L28,870 L28,480 L36,480" marker-end="url(#ahp)"/>
+<!-- COUPLING: TotalMass → Weights -->
+<path class="arr arr-c" data-t="totalmass weights coupling" d="M610,840 L610,876 L810,876 L810,490 L764,490" marker-end="url(#ahp)"/>
+<!-- TotalMass → Breguet -->
+<path class="arr" stroke="#7a8a9a" data-t="totalmass breguet" d="M520,840 L520,882 L72,882 L72,919 L110,919" marker-end="url(#ah)"/>
+
+<!-- Breguet R → DOC -->
+<path class="arr" stroke="#7a8a9a" data-t="breguet doc" d="M510,925 L595,925 L595,1075 L610,1075" marker-end="url(#ah)"/>
+<!-- FUEL RESIDUAL CLOSURE: Breguet R → TotalMass (via solver) -->
+<path class="arr arr-c" data-t="breguet totalmass coupling" d="M380,925 L380,735" marker-end="url(#ahp)"/>
+
+<!-- DOC → Obj -->
+<path class="arr" stroke="#7a8a9a" data-t="doc obj" d="M760,1190 L760,1370" marker-end="url(#ah)"/>
+</svg>
+
+<!-- ===== ZONES ===== -->
+<div class="zone zb" id="z-ib-p" style="left:418px;top:178px;width:470px;height:178px"><div class="zl">Intern B — propulsion</div></div>
+<div class="zone za" id="z-ia" style="left:18px;top:380px;width:408px;height:280px"><div class="zl">Intern A — aerodynamics</div></div>
+<div class="zone zc" id="z-ic" style="left:450px;top:380px;width:326px;height:280px"><div class="zl">Intern C — weights &amp; structures</div></div>
+<div class="zone zb" id="z-ib-e" style="left:800px;top:380px;width:270px;height:280px"><div class="zl">Intern B — engine weight</div></div>
+<div class="zone zb" id="z-ib-d" style="left:578px;top:1045px;width:360px;height:260px"><div class="zl">Intern B — cost model</div></div>
+
+<!-- ===== ROW 1: DESIGN VARIABLES + SOLVER STATE ===== -->
+<div class="n dv" data-id="s" style="left:30px;top:20px;width:140px">
+<div class="nm">S <span class="tg" style="background:#c2d9f0;color:#0c447c">design</span></div>
+<div class="eq">Wing area [m²]</div></div>
+
+<div class="n dv" data-id="ar" style="left:200px;top:20px;width:158px">
+<div class="nm">AR <span class="tg" style="background:#c2d9f0;color:#0c447c">design</span></div>
+<div class="eq">Aspect ratio b²/S [–]</div></div>
+
+<div class="n dv" data-id="vcruise" style="left:410px;top:20px;width:156px">
+<div class="nm">V_cruise <span class="tg" style="background:#c2d9f0;color:#0c447c">design</span></div>
+<div class="eq">Cruise speed [m/s]</div></div>
+
+<div class="n dv" data-id="sfctech" style="left:618px;top:20px;width:200px">
+<div class="nm">SFC_tech <span class="tg" style="background:#c2d9f0;color:#0c447c">design</span></div>
+<div class="eq">Technology factor [–]
+range [−1, 1]
+−1 = prev gen
+ 0 = baseline
+ 1 = advanced</div></div>
+
+<div class="n sv" data-id="mfuel" style="left:868px;top:20px;width:176px">
+<div class="nm">m_fuel <span class="tg" style="background:var(--coup);color:#fff">solver state</span></div>
+<div class="eq">Fuel mass [kg]
+Implicit — solved
+via BalanceComp so
+R = R_target</div></div>
+
+<!-- ===== ROW 2: PROPULSION + UVs ===== -->
+<div class="n" data-id="prop" style="left:436px;top:208px;width:270px">
+<div class="nm">PropulsionComp</div>
+<div class="eq">SFC = SFC_ref·(1 − η_base·δ_η·SFC_tech)
+ · (1 + kv_base·δ_kv·(V/V_ref − 1)²)</div>
+<div class="io"><b>in:</b> SFC_tech, V_cruise, SFC_ref, δ_η, δ_kv
+<b>out:</b> SFC [mg/(N·s)]</div></div>
+
+<div class="n uv" data-id="uv_eta" style="left:722px;top:196px;width:150px">
+<div class="nm">δ_η</div>
+<div class="eq">SFC benefit rate
+nom=1, σ=0.10</div></div>
+
+<div class="n uv" data-id="uv_kv" style="left:722px;top:270px;width:150px">
+<div class="nm">δ_kv</div>
+<div class="eq">Speed penalty
+nom=1, σ=0.20</div></div>
+
+<!-- ===== ROW 3: DISCIPLINES ===== -->
+<div class="n" data-id="aero" style="left:36px;top:410px;width:372px">
+<div class="nm">AeroComp</div>
+<div class="eq">CL  = m_total·g / (½·ρ·V²·S)
+CD0 = CD0_base·δ_CD0 + ks_base·δ_ks·(S−S_0)
+CD  = CD0 + CL² / (π·e_base·δ_e·AR)
+L/D = CL / CD</div>
+<div class="io"><b>in:</b> m_total, V, ρ, S, AR, δ_CD0, δ_ks, δ_e
+<b>out:</b> L/D, CL, CD</div></div>
+
+<div class="n" data-id="weights" style="left:468px;top:410px;width:296px">
+<div class="nm">WeightsComp</div>
+<div class="eq">m_wing = kw_base·δ_kw·S^0.758·AR^0.6
+  · m_total^0.006·(V/V_ref)^(p_base·δ_p)
+m_empty = m_wing + m_fuse
+  + fsys_base·δ_fsys·m_total + m_engine</div>
+<div class="io"><b>in:</b> S, AR, V, m_total, m_engine, δ_kw, δ_fsys, δ_p
+<b>out:</b> m_empty, m_wing [kg]</div></div>
+
+<div class="n" data-id="engwt" style="left:818px;top:410px;width:234px">
+<div class="nm">EngineWeightComp</div>
+<div class="eq">m_engine = m_eng_ref
+  · (1 + α_base·δ_α·SFC_tech)</div>
+<div class="io"><b>in:</b> SFC_tech, m_eng_ref, δ_α
+<b>out:</b> m_engine [kg]</div></div>
+
+<!-- ===== UVs FOR DISCIPLINES ===== -->
+<div class="n uv" data-id="uv_cd0" style="left:26px;top:560px;width:118px">
+<div class="nm">δ_CD0</div>
+<div class="eq">Baseline drag
+nom=1, σ=0.10</div></div>
+
+<div class="n uv" data-id="uv_ks" style="left:156px;top:560px;width:118px">
+<div class="nm">δ_ks</div>
+<div class="eq">Drag-size scaling
+nom=1, σ=0.15</div></div>
+
+<div class="n uv" data-id="uv_e" style="left:286px;top:560px;width:126px">
+<div class="nm">δ_e</div>
+<div class="eq">Oswald efficiency
+nom=1, σ=0.05</div></div>
+
+<div class="n uv" data-id="uv_kw" style="left:458px;top:580px;width:96px">
+<div class="nm">δ_kw</div>
+<div class="eq">Wing mass
+nom=1, σ=0.08</div></div>
+
+<div class="n uv" data-id="uv_fsys" style="left:562px;top:580px;width:96px">
+<div class="nm">δ_fsys</div>
+<div class="eq">Systems frac.
+nom=1, σ=0.10</div></div>
+
+<div class="n uv" data-id="uv_p" style="left:666px;top:580px;width:96px">
+<div class="nm">δ_p</div>
+<div class="eq">Speed-weight
+nom=1, σ=0.20</div></div>
+
+<div class="n uv" data-id="uv_alpha" style="left:830px;top:576px;width:160px">
+<div class="nm">δ_α</div>
+<div class="eq">Engine mass scaling
+nom=1, σ=0.10</div></div>
+
+<!-- ===== ROW 4: COUPLING NODE ===== -->
+<div class="n cpn" data-id="totalmass" style="left:370px;top:730px;width:280px">
+<div class="nm">TotalMassComp <span class="tg" style="background:#fce4ec;color:#9e2060">solver · 2 states</span></div>
+<div class="eq">m_total = m_empty + m_fuel + m_payload
+Residual: R_computed − R_target = 0
+ (closed via BalanceComp on m_fuel)</div>
+<div class="io"><b>states:</b> m_total, m_fuel
+<b>solver:</b> NewtonSolver over both loops</div></div>
+
+<div class="ct2" style="left:28px;top:848px">↻ m_total → CL → L/D</div>
+<div class="ct2" style="left:830px;top:852px">↻ m_total → m_wing</div>
+<div class="ct2" style="left:264px;top:848px">↻ R → m_fuel residual</div>
+
+<!-- ===== ROW 5: BREGUET ===== -->
+<div class="n" data-id="breguet" style="left:110px;top:870px;width:400px">
+<div class="nm">BreguetRangeComp</div>
+<div class="eq">R = (V / SFC) · (L/D)
+  · ln( m_total / (m_total − m_fuel) )</div>
+<div class="io"><b>in:</b> V, SFC, L/D, m_total, m_fuel
+<b>out:</b> R [km]</div></div>
+
+<!-- ===== ROW 6: DOC ===== -->
+<div class="n" data-id="doc" style="left:596px;top:1070px;width:316px">
+<div class="nm">DOCComp</div>
+<div class="eq">DOC = Cf_base·δ_Cf·m_fuel + C_time·(R/V)
+ + k_acq·C_eng_ref·(1+β_base·δ_β·SFC_tech)</div>
+<div class="io"><b>in:</b> m_fuel, R, V, SFC_tech, δ_Cf, δ_β
+<b>out:</b> DOC, DOC/(pax·km)</div></div>
+
+<div class="n uv" data-id="uv_beta" style="left:600px;top:1220px;width:148px">
+<div class="nm">δ_β</div>
+<div class="eq">Engine cost scaling
+nom=1, σ=0.15</div></div>
+
+<div class="n uv" data-id="uv_cfuel" style="left:790px;top:1220px;width:130px">
+<div class="nm">δ_Cf</div>
+<div class="eq">Fuel price
+nom=1, σ=0.15</div></div>
+
+<!-- ===== ROW 7: OBJECTIVE + CONSTRAINTS ===== -->
+<div class="n ob" data-id="obj" style="left:680px;top:1370px;width:210px">
+<div class="nm" style="color:#2e6e16;font-size:13px">Minimize</div>
+<div class="eq" style="font-size:12px;color:#2e6e16;font-weight:500">DOC / (pax · km)</div></div>
+
+<div class="n co" data-id="constraints" style="left:190px;top:1370px;width:240px">
+<div class="nm" style="color:#9e2020">Constraints</div>
+<div class="eq" style="color:#9e2020">CL ≤ CL_max (stall)
+(R = R_target closed
+ by solver, not optimizer)</div></div>
+
+<div class="n" data-id="params" style="left:30px;top:1370px;width:148px;border-style:dotted;border-color:#aaa;background:#fafafa">
+<div class="nm" style="color:var(--t3)">Fixed params</div>
+<div class="eq" style="color:var(--t3)">R_target, N_pax
+m_payload, SFC_ref
+S_0, V_ref, m_fuse
+CD0_base, ks_base
+e_base, η_base
+kv_base, kw_base
+fsys_base, p_base
+α_base, β_base
+Cf_base, m_eng_ref
+C_time, k_acq
+C_eng_ref</div></div>
+
+</div></div></div>
+
+<script>
+const dia=document.getElementById('dia'),arrs=document.querySelectorAll('.arr'),nds=document.querySelectorAll('.n'),azs=document.querySelectorAll('.zone');
+const zm={ia:['z-ia'],ib:['z-ib-p','z-ib-e','z-ib-d'],ic:['z-ic']};
+const im={prop:'ib',aero:'ia',weights:'ic',engwt:'ib',doc:'ib',uv_cd0:'ia',uv_ks:'ia',uv_e:'ia',uv_kw:'ic',uv_fsys:'ic',uv_p:'ic',uv_alpha:'ib',uv_beta:'ib',uv_cfuel:'ib',uv_eta:'ib',uv_kv:'ib'};
+function rst(){dia.classList.remove('dim');arrs.forEach(a=>a.classList.remove('ha'));nds.forEach(n=>n.classList.remove('hl'));azs.forEach(z=>z.classList.remove('gl'));document.querySelectorAll('.cb[data-f]').forEach(b=>b.classList.remove('on'));document.querySelector('[data-f="reset"]').classList.add('on')}
+function trace(id){dia.classList.add('dim');const s=new Set([id]);arrs.forEach(a=>{const t=(a.dataset.t||'').split(' ');if(t.includes(id)){a.classList.add('ha');t.forEach(x=>s.add(x))}});nds.forEach(n=>{if(s.has(n.dataset.id))n.classList.add('hl')});const z=im[id];if(z&&zm[z])zm[z].forEach(i=>{const e=document.getElementById(i);if(e)e.classList.add('gl')})}
+function filt(f){if(f==='reset'){rst();return}dia.classList.add('dim');const g={coupling:a=>(a.dataset.t||'').includes('coupling'),ia:a=>(a.dataset.t||'').split(' ').some(t=>['aero','uv_cd0','uv_ks','uv_e'].includes(t)),ib:a=>(a.dataset.t||'').split(' ').some(t=>['prop','engwt','doc','sfctech','uv_alpha','uv_beta','uv_cfuel','uv_eta','uv_kv'].includes(t)),ic:a=>(a.dataset.t||'').split(' ').some(t=>['weights','uv_kw','uv_fsys','uv_p'].includes(t))};const fn=g[f];if(!fn)return;const s=new Set;arrs.forEach(a=>{if(fn(a)){a.classList.add('ha');(a.dataset.t||'').split(' ').forEach(t=>s.add(t))}});nds.forEach(n=>{if(s.has(n.dataset.id))n.classList.add('hl')});if(zm[f])zm[f].forEach(i=>{const e=document.getElementById(i);if(e)e.classList.add('gl')})}
+nds.forEach(n=>{n.addEventListener('click',e=>{e.stopPropagation();rst();document.querySelector('[data-f="reset"]').classList.remove('on');trace(n.dataset.id);n.classList.add('hl')})});
+document.getElementById('ct').addEventListener('click',e=>{const b=e.target.closest('.cb');if(!b||!b.dataset.f)return;rst();b.classList.add('on');document.querySelector('[data-f="reset"]').classList.remove('on');filt(b.dataset.f)});
+document.addEventListener('click',e=>{if(!e.target.closest('.n')&&!e.target.closest('.cb'))rst()});
+const uvBtn=document.getElementById('uv-toggle');
+uvBtn.addEventListener('click',e=>{
+  e.stopPropagation();
+  const hidden=dia.classList.toggle('uv-hidden');
+  uvBtn.textContent='Uncertain vars: '+(hidden?'off':'on');
+  uvBtn.classList.toggle('on',!hidden);
+});
+</script>
+</body>
+</html>
