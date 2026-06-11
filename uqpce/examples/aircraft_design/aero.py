@@ -14,7 +14,7 @@ import openmdao.api as om
 
 #outputs 
 # L/D, CL, CD
-class AeroDicipline(om.ExplicitComponent):
+class AeroDiscipline(om.ExplicitComponent):
     
 
     def setup(self):
