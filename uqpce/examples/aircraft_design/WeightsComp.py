@@ -7,8 +7,8 @@ class Weights_Struct(om.ExplicitComponent):
     
     Inputs:
     Design Vars: S [m^2], AR [-], V [m/s]
-    Uncertain Vars: delta_kw [kg] (wing mass), delta_fsys [-] (systems frac)
     Coupling: m_total [kg], m_engine [kg]
+    Parameters: kw_base, fsys_base, p_base, V_ref [m/s], m_fuse [kg]
 
     Outputs:
     m_empty [kg], m_wing [kg]
@@ -29,12 +29,12 @@ class Weights_Struct(om.ExplicitComponent):
 
         self.add_input('kw_base', val=1)
         self.add_input('fsys_base', val=0.15)
-        self.add_input('p_base', default=1)
-        self.add_input('V_ref', default=250.0, units='m/s')
-        self.add_input('m_fuse', default=10000, units='kg')
+        self.add_input('p_base', val=1)
+        self.add_input('V_ref', val=250.0, units='m/s')
+        self.add_input('m_fuse', val=10000, units='kg')
 
-        self.add_output('m_empty', val=0.0)
-        self.add_output('m_wing', val=0.0)
+        self.add_output('m_empty', val=0.0, units= 'kg')
+        self.add_output('m_wing', val=0.0, units='kg')
 
     def setup_partials(self):
         inputs = ['S', 'AR', 'V', 'm_total', 'm_engine', 'kw_base', 'fsys_base', 'p_base', 'V_ref', 'm_fuse']
@@ -44,9 +44,9 @@ class Weights_Struct(om.ExplicitComponent):
 
     def compute(self, inputs, outputs):
         """
-        m_wing = kw_base · delta_kw · S^0.758 · AR^0.6 · m_total^0.006 · (V/V_ref)^(p_base·delta_p)
+        m_wing = kw_base · S^0.758 · AR^0.6 · m_total^0.006 · (V/V_ref)^p_base
 
-        m_empty = m_wing + m_fuse + fsys_base · delta_fsys · m_total + m_engine
+        m_empty = m_wing + m_fuse + fsys_base · m_total + m_engine
         """
 
         S = inputs['S']
