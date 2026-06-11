@@ -15,7 +15,6 @@ import openmdao.api as om
 #outputs 
 # LD, CL, CD
 class AeroDicipline(om.ExplicitComponent):
-    
 
     def setup(self):
     #Inputs-start~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
