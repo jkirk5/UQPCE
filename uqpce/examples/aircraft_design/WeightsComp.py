@@ -1,5 +1,6 @@
 import openmdao.api as om 
 import numpy as np
+from fixed import parameters
 
 class Weights_Struct(om.ExplicitComponent):
     """
@@ -31,11 +32,11 @@ class Weights_Struct(om.ExplicitComponent):
         self.add_output('m_wing', val=0.0)
 
     def initialize(self):
-        self.options.declare('kw_base', default=1)
-        self.options.declare('fsys_base', default=1)
-        self.options.declare('p_base', default=1)
-        self.options.declare('V_ref', default=250.0)
-        self.options.declare('m_fuse', default=10000)
+        self.options.declare('kw_base', default=parameters['kw_base'])
+        self.options.declare('fsys_base', default=parameters['fsys_base'])
+        self.options.declare('p_base', default=parameters['p_base'])
+        self.options.declare('V_ref', default=parameters['V_ref'])
+        self.options.declare('m_fuse', default=parameters['m_fuse'])
 
     def setup_partials(self):
         self.declare_partials('m_wing',['S','AR','V','m_total'])

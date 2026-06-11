@@ -10,11 +10,11 @@ class Propulsion(om.ExplicitComponent):
         self.add_input('SFC_ref', desc="Reference SFC technology factor")
         self.add_input('eta_base')
         self.add_input('kv_base')
-        self.add_input('V_ref', units="m/s", desc="Reference flight speed") #reference cruise speed?
+        self.add_input('V_ref', desc="Reference flight speed") #reference cruise speed?
 
         #Global design variables
         self.add_input('SFC_tech', val=0., desc="SFC technology factor")
-        self.add_input('V_cruise', units="m/s", desc="Cruise speed")
+        self.add_input('V', desc="Cruise speed")
 
         """
         #Uncertainties
@@ -23,10 +23,10 @@ class Propulsion(om.ExplicitComponent):
         """
 
         #Output
-        self.add_output('SFC', units="mg/(N*s)", desc="Specific fuel consumption")
+        self.add_output('SFC', desc="Specific fuel consumption")
 
     def setup_partials(self):
-        self.declare_partials('SFC', ['SFC_tech', 'V_cruise', 'SFC_ref', 'eta_base', 'kv_base', 'V_ref'])
+        self.declare_partials('SFC', ['SFC_tech', 'V', 'SFC_ref', 'eta_base', 'kv_base', 'V_ref'])
 
     def compute(self, inputs, outputs):
         SFC_ref = inputs['SFC_ref']
@@ -34,7 +34,7 @@ class Propulsion(om.ExplicitComponent):
         kv_base = inputs['kv_base']
         V_ref = inputs['V_ref']
         SFC_tech = inputs['SFC_tech']
-        V_cruise = inputs['V_cruise']
+        V_cruise = inputs['V']
         #delta_eta = inputs['delta_eta']
         #delta_kv = inputs['delta_kv']
         
@@ -46,12 +46,12 @@ class Propulsion(om.ExplicitComponent):
         kv_base = inputs['kv_base']
         V_ref = inputs['V_ref']
         SFC_tech = inputs['SFC_tech']
-        V_cruise = inputs['V_cruise']
+        V_cruise = inputs['V']
         #delta_eta = inputs['delta_eta']
         #delta_kv = inputs['delta_kv']
         
         partials['SFC', 'SFC_tech'] = SFC_ref * (-eta_base) * (1 + kv_base * (V_cruise/V_ref - 1)**2)
-        partials['SFC', 'V_cruise'] = (2 / V_ref) * (SFC_ref * (1 - eta_base * SFC_tech) * (kv_base * (V_cruise/V_ref - 1)))
+        partials['SFC', 'V'] = (2 / V_ref) * (SFC_ref * (1 - eta_base * SFC_tech) * (kv_base * (V_cruise/V_ref - 1)))
         
         partials['SFC', 'SFC_ref'] = (1 - eta_base * SFC_tech) * (1 + kv_base * (V_cruise/V_ref - 1)**2)
         partials['SFC', 'eta_base'] = SFC_ref * (-SFC_tech) * (1 + kv_base * (V_cruise/V_ref - 1)**2)
@@ -75,7 +75,7 @@ class EngineWeight(om.ExplicitComponent):
         #self.add_input('delta_alpha', val=1.0)
 
         #Output
-        self.add_output('m_engine', units="kg", desc="Engine mass")
+        self.add_output('m_engine', desc="Engine mass")
 
     def setup_partials(self):
         self.declare_partials('m_engine', ['SFC_tech', 'm_eng_ref', 'alpha_base'])
@@ -114,13 +114,13 @@ class DOC(om.ExplicitComponent):
 
         #Global design variables
         self.add_input('SFC_tech', val=0., desc="SFC technology factor")
-        self.add_input('V_cruise', units="m/s", desc="Cruise speed")
+        self.add_input('V', desc="Cruise speed")
 
         #Local design variable
-        self.add_input('R', units="km", desc="Breguet range")
+        self.add_input('R', desc="Breguet range")
         
         #Solver state
-        self.add_input('m_fuel', units="kg", desc="Fuel mass") 
+        self.add_input('m_fuel', desc="Fuel mass") 
 
         """
         #Uncertainties
@@ -132,11 +132,11 @@ class DOC(om.ExplicitComponent):
         self.add_output('DOC', desc="Direct operating cost")
 
     def setup_partials(self):
-        self.declare_partials('DOC', ['m_fuel', 'R', 'V_cruise', 'SFC_tech', 'Cf_base', 'C_time', 'k_acq', 'C_eng_ref', 'beta_base'])
+        self.declare_partials('DOC', ['m_fuel', 'R', 'V', 'SFC_tech', 'Cf_base', 'C_time', 'k_acq', 'C_eng_ref', 'beta_base'])
 
     def compute(self, inputs, outputs):
         SFC_tech = inputs['SFC_tech']
-        V_cruise = inputs['V_cruise']
+        V_cruise = inputs['V']
         Cf_base = inputs['Cf_base']
         m_fuel = inputs['m_fuel']
         C_time = inputs['C_time']
@@ -147,11 +147,11 @@ class DOC(om.ExplicitComponent):
         #delta_beta = inputs['delta_beta']
         #delta_Cf = inputs['delta_Cf']
 
-        outputs['DOC'] = Cf_base * m_fuel + C_time * (R/V_cruise) + k_acq * C_eng_ref * (1 + beta_base * SFC_tech)
+        outputs['DOC'] = (Cf_base * m_fuel + C_time * (R/V_cruise)*(1/3600.0) + k_acq * C_eng_ref * (1 + beta_base * SFC_tech))
     
     def compute_partials(self, inputs, partials):
         SFC_tech = inputs['SFC_tech']
-        V_cruise = inputs['V_cruise']
+        V_cruise = inputs['V']
         Cf_base = inputs['Cf_base']
         m_fuel = inputs['m_fuel']
         C_time = inputs['C_time']
@@ -164,7 +164,7 @@ class DOC(om.ExplicitComponent):
 
         partials['DOC', 'm_fuel'] = Cf_base
         partials['DOC', 'R'] = C_time / V_cruise
-        partials['DOC', 'V_cruise'] = -C_time * (R / V_cruise**2)
+        partials['DOC', 'V'] = -C_time * (R / V_cruise**2)
         partials['DOC', 'SFC_tech'] = k_acq * C_eng_ref * (beta_base)
 
         partials['DOC', 'Cf_base'] = m_fuel
