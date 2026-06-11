@@ -13,7 +13,7 @@ import openmdao.api as om
 # delta_CD0, delta_ks, delta_e
 
 #outputs 
-# L/D, CL, CD
+# LD, CL, CD
 class AeroDicipline(om.ExplicitComponent):
     
 
@@ -49,7 +49,7 @@ class AeroDicipline(om.ExplicitComponent):
     #outputs-start~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         self.add_output('CL',0.0,desc="Lift Coefficient of Configuration")
         self.add_output('CD',0.0,desc="Drag Coefficient of Configuration")
-        self.add_output('L/D',0.0,desc="Lift to Drag Ratio of Configuration")
+        self.add_output('LD',0.0,desc="Lift to Drag Ratio of Configuration")
     #outputs-end~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     
@@ -58,14 +58,21 @@ class AeroDicipline(om.ExplicitComponent):
         self.declare_partials(of="CL",wrt="V",method="exact")
         self.declare_partials(of="CL",wrt="S",method="exact")
         self.declare_partials(of="CL",wrt="AR",method="exact")
+        self.declare_partials(of="CL",wrt="m_total",method="exact")
+        self.declare_partials(of="CL",wrt="rho",method="exact")
 
         self.declare_partials(of="CD",wrt="V",method="exact")
         self.declare_partials(of="CD",wrt="S",method="exact")
         self.declare_partials(of="CD",wrt="AR",method="exact")
+        self.declare_partials(of="CD",wrt="m_total",method="exact")
+        self.declare_partials(of="CD",wrt="rho",method="exact")
 
-        self.declare_partials(of="L/D",wrt="V",method="exact")
-        self.declare_partials(of="L/D",wrt="S",method="exact")
-        self.declare_partials(of="L/D",wrt="AR",method="exact")
+        self.declare_partials(of="LD",wrt="V",method="exact")
+        self.declare_partials(of="LD",wrt="S",method="exact")
+        self.declare_partials(of="LD",wrt="AR",method="exact")
+        self.declare_partials(of="LD",wrt="m_total",method="exact")
+        self.declare_partials(of="LD",wrt="rho",method="exact")
+
     #Sensitivities-end~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     #passes input member inherited from om.Exp for reading and
@@ -87,7 +94,7 @@ class AeroDicipline(om.ExplicitComponent):
         outputs['CL'] = CL = (inputs['m_total']*g) / ((1.0/2.0)*rho*(inputs['V']**2)*inputs['S'])
         C_D0 = C_D0_base*delta_CD0 + ks_base*delta_ks*(inputs['S']-S_0)     
         outputs['CD'] = CD = C_D0 + (CL**2) / (np.pi*inputs['AR']*e_base*delta_e)
-        outputs['L/D'] = CL/CD
+        outputs['LD'] = CL/CD
 
 
     def compute_partials(self, inputs, partials): #I presume inputs and partials are inherited memebers of
@@ -108,7 +115,9 @@ class AeroDicipline(om.ExplicitComponent):
         partials['CL','V'] = dCLdV = -2*CL*(1.0/inputs['V'])
         partials['CL','S'] = dCLdS = -1*CL*(1.0/inputs['S'])
         partials['CL','AR'] = dCLdAR = CL/inputs['AR']
-
+        partials['CL','m_total'] = dCLdm = CL/inputs['m_total']
+        partials['CL','rho'] = dCLdrho = -CL/rho
+    
         #ugliness helpers
         dCD_0dV = 0
         dCD_0dS = ks_base*delta_ks
@@ -116,20 +125,27 @@ class AeroDicipline(om.ExplicitComponent):
         dSdAR = -b_squared/(inputs['AR']**2)
         dCD_0dAR = dCD_0dS*dSdAR
         dARdS = -inputs['AR']*(1.0/inputs['S'])
+        dCD_0dm = 0
+        dCD_0drho = 0 
 
         #product rule/quotient rule or whatever u wanna call it helpers
         product_rule_V = 2*CL*dCLdV*(1/inputs['AR']) #+ (CL**2)*(0)
         product_rule_S = 2*CL*dCLdS*(1/inputs['AR']) - (CL**2)*(1.0/(inputs['AR']**2))*dARdS
         product_rule_AR = 2*CL*dCLdAR*(1/inputs['AR']) - (CL**2)*(1.0/(inputs['AR']**2))*(1.0)
+        product_rule_m = 2*CL*dCLdm*(1/inputs['AR'])
+        product_rule_rho = 2*CL*dCLdrho*(1/inputs['AR'])
         
         partials['CD','V'] = dCDdV = dCD_0dV + (1/(np.pi*e_base*delta_e))*(product_rule_V)
         partials['CD','S'] = dCDdS =  dCD_0dS + (1/(np.pi*e_base*delta_e))*(product_rule_S)
         partials['CD','AR'] = dCDdAR = dCD_0dAR +  (1/(np.pi*e_base*delta_e))*(product_rule_AR)
+        partials['CD','m_total'] = dCDdm =  dCD_0dm + (1/(np.pi*e_base*delta_e))*(product_rule_m)
+        partials['CD','rho'] = dCDdrho =  dCD_0drho + (1/(np.pi*e_base*delta_e))*(product_rule_rho)
 
-        partials['L/D','V'] = (CD*dCLdV - CL*dCDdV)/(CD**2) 
-        partials['L/D','S'] = (CD*dCLdS - CL*dCDdS)/(CD**2)
-        partials['L/D','AR'] = (CD*dCLdAR - CL*dCDdAR)/(CD**2)
-
+        partials['LD','V'] = (CD*dCLdV - CL*dCDdV)/(CD**2) 
+        partials['LD','S'] = (CD*dCLdS - CL*dCDdS)/(CD**2)
+        partials['LD','AR'] = (CD*dCLdAR - CL*dCDdAR)/(CD**2)
+        partials['LD','m_total'] = (CD*dCLdm - CL*dCDdm)/(CD**2)
+        partials['LD','rho'] = (CD*dCLdrho - CL*dCDdrho)/(CD**2)
 
 def main():
 
