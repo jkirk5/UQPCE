@@ -121,10 +121,12 @@ class AeroDicipline(om.ExplicitComponent):
         #ugliness helpers
         dCD_0dV = 0
         dCD_0dS = ks_base*delta_ks
-        b_squared = inputs['AR']*inputs['S']
-        dSdAR = -b_squared/(inputs['AR']**2)
+        #b_squared = inputs['AR']*inputs['S']
+        dSdAR = 0 #fixed to assume S and AR as independent. span is always 
+        #computed from these inputs
         dCD_0dAR = dCD_0dS*dSdAR
-        dARdS = -inputs['AR']*(1.0/inputs['S'])
+        dARdS = 0 #fixed to assume S and AR as independent. span is always 
+        #computed from these inputs
         dCD_0dm = 0
         dCD_0drho = 0 
 
