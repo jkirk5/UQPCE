@@ -18,6 +18,8 @@ class CoupledGroup(om.Group):
         self.set_input_defaults('V', val=235.0)       # m/s
         self.set_input_defaults('SFC_tech', val=0.0)  # baseline technology
 
+        self.add_subsystem('Prop', Propulsion(), promotes_inputs=['V', 'SFC_tech'])
+        self.add_subsystem('Engine', EngineWeight(), promotes_inputs=['SFC_tech'])
         self.add_subsystem('Aero', AeroDicipline(), promotes_inputs=['S', 'AR', 'V'])
         self.add_subsystem('Weight', Weights_Struct(), promotes_inputs=['S', 'AR', 'V'])
         self.add_subsystem('Mass', MassTotal())
@@ -28,7 +30,7 @@ class CoupledGroup(om.Group):
             name='m_fuel',
             val=16000.0,
             lower=1000.0,
-            upper=25000.0,
+            upper=50000.0,
             lhs_name='R',
             rhs_name='R_target',
             ref=16000.0,
@@ -36,8 +38,7 @@ class CoupledGroup(om.Group):
             )
         self.add_subsystem('Balance', Balance)
 
-        self.add_subsystem('Prop', Propulsion(), promotes_inputs=['V', 'SFC_tech'])
-        self.add_subsystem('Engine', EngineWeight(), promotes_inputs=['SFC_tech'])
+        
         self.add_subsystem('DOC', DOC(), promotes_inputs=['V', 'SFC_tech'])
 
         self.connect('Balance.m_fuel', 'Range.m_fuel')
@@ -60,7 +61,7 @@ class CoupledGroup(om.Group):
 
         self.nonlinear_solver = om.NewtonSolver(solve_subsystems=True)
         self.nonlinear_solver.options['iprint'] = 2
-        self.nonlinear_solver.options['maxiter'] = 50
+        self.nonlinear_solver.options['maxiter'] = 500
         self.nonlinear_solver.options['atol'] = 1e-6
         self.nonlinear_solver.options['rtol'] = 1e-9
 
@@ -88,7 +89,7 @@ def main():
     prob.set_val('aircraft.Balance.R_target', parameters['R_target'])
 
     # Fuel initial guess
-    prob.set_val('aircraft.Balance.m_fuel', 16000.0)  # kg
+    prob.set_val('aircraft.Balance.m_fuel', 9000.0)  # kg
 
     # Propulsion parameters
     prob.set_val('aircraft.Prop.SFC_ref', parameters['SFC_ref'])

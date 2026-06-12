@@ -2,7 +2,7 @@ parameters = {
     # Mission / payload
     # 737-800 max range is often quoted around 5,765 km.
     # If you want a more conservative full-payload airline range, use 4.8e6 instead.
-    "R_target": 5.765e6,       # m
+    "R_target": 10e6,       # m
     "N_pax": 162,              # passengers, typical 2-class 737-800
     "m_payload": 16200.0,      # kg, approx 100 kg/passenger incl. bags
 
@@ -36,7 +36,7 @@ parameters = {
     # Cost model
     "Cf_base": 0.80,           # cost/kg fuel, normalized
     "C_time": 2000.0 / 3600.0, # cost/s, equivalent to 2000 cost/hour
-    "k_acq": 1.0,              # acquisition-cost multiplier
+    "k_acq": 0.0001,              # acquisition-cost multiplier
     "C_eng_ref": 2.0e7,        # normalized/reference total engine acquisition cost
-    "beta_base": 0.25,         # [-]
+    "beta_base": -0.25,         # [-]
 }

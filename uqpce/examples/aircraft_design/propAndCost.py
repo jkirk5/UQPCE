@@ -147,7 +147,7 @@ class DOC(om.ExplicitComponent):
         #delta_beta = inputs['delta_beta']
         #delta_Cf = inputs['delta_Cf']
 
-        outputs['DOC'] = (Cf_base * m_fuel + C_time * (R/V_cruise)*(1/3600.0) + k_acq * C_eng_ref * (1 + beta_base * SFC_tech))
+        outputs['DOC'] = (Cf_base * m_fuel + C_time * (R/V_cruise) + k_acq * C_eng_ref * (1 + beta_base * SFC_tech))
     
     def compute_partials(self, inputs, partials):
         SFC_tech = inputs['SFC_tech']

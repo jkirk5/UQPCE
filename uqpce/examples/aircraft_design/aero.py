@@ -113,7 +113,8 @@ class AeroDicipline(om.ExplicitComponent):
                                                   
         partials['CL','V'] = dCLdV = -2*CL*(1.0/inputs['V'])
         partials['CL','S'] = dCLdS = -1*CL*(1.0/inputs['S'])
-        partials['CL','AR'] = dCLdAR = CL/inputs['AR']
+        partials['CL','AR'] = dCLdAR = 0 #fixed to assume S and AR as independent. span is always 
+        #computed from these inputs
         partials['CL','m_total'] = dCLdm = CL/inputs['m_total']
         partials['CL','rho'] = dCLdrho = -CL/rho
     
