@@ -16,13 +16,13 @@ class BreguetRangeComp(om.ExplicitComponent):
     """
 
     def setup(self):
-        self.add_input('V', val = 250)
-        self.add_input('SFC', val = 1.5e-5)
-        self.add_input('LD', val = 15)
-        self.add_input('m_total', val = 50000)
-        self.add_input('m_fuel', val = 50000)
+        self.add_input('V', val = 230, units='m/s')
+        self.add_input('SFC', val = 1.7e-4, units='1/s')
+        self.add_input('LD', val = 16)
+        self.add_input('m_total', val = 50000, units='kg')
+        self.add_input('m_fuel', val = 10000, units='kg')
 
-        self.add_output('R', val = 1e6)
+        self.add_output('R', val = 1e6, units='m')
 
     def setup_partials(self):
         self.declare_partials('R', ['V', 'SFC', 'LD', 'm_total', 'm_fuel'])
