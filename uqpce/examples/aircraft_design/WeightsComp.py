@@ -17,30 +17,31 @@ class Weights_Struct(om.ExplicitComponent):
     """
 
     def setup(self):
-        self.add_input('S', val=150)
+        self.add_input('S', val=150, units='m**2')
         self.add_input('AR', val=10)
-        self.add_input('V', val=250)
+        self.add_input('V', val=250, units='m/s')
 
-        self.add_input('m_total')
-        self.add_input('m_engine')
+        self.add_input('m_total', val=50000, units='kg')
+        self.add_input('m_engine', val=4000, units='kg')
 
         #self.add_input("delta_kw")
         #self.add_input("delta_fsys")
         #self.add_input("delta_p")
 
+        self.add_input('kw_base', val=1)
+        self.add_input('fsys_base', val=0.15)
+        self.add_input('p_base', default=1)
+        self.add_input('V_ref', default=250.0, units='m/s')
+        self.add_input('m_fuse', default=10000, units='kg')
+
         self.add_output('m_empty', val=0.0)
         self.add_output('m_wing', val=0.0)
 
-    def initialize(self):
-        self.options.declare('kw_base', default=parameters['kw_base'])
-        self.options.declare('fsys_base', default=parameters['fsys_base'])
-        self.options.declare('p_base', default=parameters['p_base'])
-        self.options.declare('V_ref', default=parameters['V_ref'])
-        self.options.declare('m_fuse', default=parameters['m_fuse'])
-
     def setup_partials(self):
-        self.declare_partials('m_wing',['S','AR','V','m_total'])
-        self.declare_partials('m_empty',['S','AR','V','m_total','m_engine'])
+        inputs = ['S', 'AR', 'V', 'm_total', 'm_engine', 'kw_base', 'fsys_base', 'p_base', 'V_ref', 'm_fuse']
+
+        self.declare_partials('m_wing', inputs)
+        self.declare_partials('m_empty',inputs)
 
     def compute(self, inputs, outputs):
         """
@@ -49,51 +50,59 @@ class Weights_Struct(om.ExplicitComponent):
         m_empty = m_wing + m_fuse + fsys_base · delta_fsys · m_total + m_engine
         """
 
-        kw_base = self.options['kw_base']
-        fsys_base = self.options['fsys_base']
-        p_base = self.options['p_base']
-        V_ref = self.options['V_ref']
-        m_fuse = self.options['m_fuse']
-
         S = inputs['S']
         AR = inputs['AR']
         V = inputs['V']
         m_total = inputs['m_total']
         m_engine = inputs['m_engine']
 
-        delta_kw = 1.0
-        delta_fsys = 1.0
-        delta_p = 1.0
+        #delta_kw = 1.0
+        #delta_fsys = 1.0
+        #delta_p = 1.0
+        
+        kw_base = inputs['kw_base']
+        fsys_base = inputs['fsys_base']
+        p_base = inputs['p_base']
+        V_ref = inputs['V_ref']
+        m_fuse = inputs['m_fuse']
 
-        m_wing = kw_base * delta_kw * (S ** 0.758) * (AR ** 0.6) * (m_total ** 0.006) * ((V/V_ref) ** (p_base * delta_p))
+        m_wing = (kw_base * (S ** 0.758) * (AR ** 0.6) * (m_total ** 0.006) * ((V/V_ref) ** (p_base)))
 
         outputs['m_wing'] = m_wing
-        outputs['m_empty'] = m_wing + m_fuse + (fsys_base * delta_fsys * m_total) + m_engine 
+
+        outputs['m_empty'] = m_wing + m_fuse + (fsys_base * m_total) + m_engine 
 
     def compute_partials(self, inputs, partials):
         
-        kw_base = self.options['kw_base']
-        fsys_base = self.options['fsys_base']
-        p_base = self.options['p_base']
-        V_ref = self.options['V_ref']
-        m_fuse = self.options['m_fuse']
+        kw_base = inputs['kw_base']
+        fsys_base = inputs['fsys_base']
+        p_base = inputs['p_base']
+        V_ref = inputs['V_ref']
 
         S = inputs['S']
         AR = inputs['AR']
         V = inputs['V']
         m_total = inputs['m_total']
-        m_engine = inputs['m_engine']
 
-        delta_kw = 1.0
-        delta_fsys = 1.0
-        delta_p = 1.0
+        #delta_kw = 1.0
+        #delta_fsys = 1.0
+        #delta_p = 1.0
 
-        m_wing = kw_base * delta_kw * (S ** 0.758) * (AR ** 0.6) * (m_total ** 0.006) * ((V/V_ref) ** (p_base * delta_p))
+        m_wing = (kw_base * (S ** 0.758) * (AR ** 0.6) * (m_total ** 0.006) * ((V/V_ref) ** (p_base)))
         
         partials['m_wing', 'S'] = 0.758 * m_wing / S
         partials['m_wing', 'AR'] = 0.6 * m_wing / AR
         partials['m_wing', 'm_total'] = 0.006 * m_wing / m_total
-        partials['m_wing', 'V'] = (p_base*delta_p) * m_wing / V
+        partials['m_wing', 'V'] = p_base * m_wing / V
+
+        partials['m_wing', 'm_engine'] = 0.0
+        partials['m_wing', 'fsys_base'] = 0.0
+        partials['m_wing', 'm_fuse'] = 0.0
+
+        partials['m_wing', 'kw_base'] = m_wing / kw_base
+
+        partials['m_wing', 'V_ref'] = -p_base * m_wing / V_ref
+        partials['m_wing', 'p_base'] = m_wing * np.log(V/V_ref)
 
         #m_empty grads
 
@@ -101,33 +110,13 @@ class Weights_Struct(om.ExplicitComponent):
         partials['m_empty', 'AR'] = partials['m_wing', 'AR']
         partials['m_empty', 'V'] = partials['m_wing', 'V']
 
-        partials['m_empty', 'm_total'] = (partials['m_wing', 'm_total'] + fsys_base * delta_fsys)
+        partials['m_empty', 'm_total'] = (partials['m_wing', 'm_total'] + fsys_base)
         partials['m_empty', 'm_engine'] = 1.0
 
-    def main():
+        partials['m_empty', 'kw_base'] = partials['m_wing', 'kw_base']
+        partials['m_empty', 'fsys_base'] = m_total
 
-        print("runs")
+        partials['m_empty', 'p_base'] = partials['m_wing', 'p_base']
+        partials['m_empty', 'V_ref'] = partials['m_wing', 'V_ref']
 
-if __name__ == "__main__":
-
-    prob = om.Problem()
-    prob.model.add_subsystem(
-        'weights',
-        Weights_Struct()
-    )
-
-    prob.setup()
-
-    prob.set_val('weights.S', 150.0)
-    prob.set_val('weights.AR', 10.0)
-    prob.set_val('weights.V', 250.0)
-
-    prob.set_val('weights.m_total', 50000.0)
-    prob.set_val('weights.m_engine', 4000.0)
-
-    prob.run_model()
-
-    print("m_wing =", prob.get_val('weights.m_wing'))
-    print("m_empty =", prob.get_val('weights.m_empty'))
-
-    #prob.check_partials(compact_print=True)
+        partials['m_empty', 'm_fuse'] = 1.0
