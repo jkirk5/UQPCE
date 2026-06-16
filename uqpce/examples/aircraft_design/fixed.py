@@ -2,39 +2,53 @@
 #737-800 parameters
 #sourced from http://www.b737.org.uk/techspecsdetailed.htm
 parameters = {
-    #
-    "R_target": 4.5e6,           # m
-    "N_pax": 180,                # num passengers
-    "m_payload_design": 17955.0, #kg
-    "m_payload_max": 20540,      #kg
-    
-
+    #~~~~miscelaneous parameters~~~~~~~~~~~~~~~~~~
+    "R_target": 4e6,           # try 4000 to 5000 km
+    "N_pax": 189,              # num passengers
     "SFC_ref": 1.60e-4,        # 1/s, 737-class cruise fuel consumption rate
-    "eta_base": 0.15,          # [-], tech sensitivity
-    "kv_base": 0.35,           # [-], speed-off-design penalty strength
-    "V_ref": 235.0,            # m/s, 737-800-ish cruise speed
-
-    # Aero
-    "S_naught": 124.58,        # m^2, 737-800 wing area
-    "b" : 34.32,               #meters, span is not design varibale, but useful regardless
+    "V_ref": 231.5,            # m/s, 737-800-ish cruise speed
+    "S_naught": 124.58,        #[square meters] 737-800 wing area
     "CD0_base": 0.022,         # clean cruise parasite drag ballpark
-    "ks_base": 5.0e-5,         # 1/m^2
-    "e_oswald_base": 0.80,     # transport aircraft cruise ballpark
+    "e_oswald_base": 0.80,     # reasonable
+    #~~~~miscelaneous parameters~~~~~~~~~~~~~~~~~~
+    
+    #~~~~~tuning parameters~~~~~~~~~~~~~~~~~~~~~~~~ 
+    #determined by inspection using 737-800 values
+    "fsys_base": 0.19357,
+    "kw_base": 53.0,
+    "p_base": 1.0,     #1 until further notice...
+    "eta_base": 0.20,       # shitty guesstimate
+    "kv_base": 0.20,        # shitty guesstimate
+    "alpha_base": -0.20,    # shitty guesstimate
+    "beta_base": 0.2,       # shitty guesstimate
+    "ks_base": 7.0e-5,    # SHITIEST guesstimate
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    # Weights
-    "m_fuse": 14000.0,         # kg, fixed empty-mass bucket excluding wing/systems/engines
-    "kw_base": 95.0,           # calibrated coefficient for wing-mass formula
-    "fsys_base": 0.09,         # systems/installed fraction of total mass
-    "p_base": 1.0,             # not sure
+    #~~revised mass estimates for 737-800 [kg]~~~~~
+    "m_fuse": 14518,
+    "m_payload_design": 17955.0, 
+    "m_payload_max": 20540,
+    "m_fuel_max": 21000, #GUESS init-val or COMPARE to out-val
+    "m_wing" : 6941, #COMPARE to out-val
+    "m_eng_ref" : 8602, #from 2 CFM56-7 
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    # Engine weight
-    "m_eng_ref": 5200.0,       # kg, approx two installed CFM56-class engines, rough
-    "alpha_base": 0.20,        # not sure
+    #~~design var initializers based on 737-800~~~~
+    "AR" : 9.45,
+    "S" : 124.58, #same as 737-800 area
+    "V_cruise" : 231.5,
+    "SFC_tech" : 0,
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    # Cost model
-    "Cf_base": 0.80,           # cost/kg fuel, normalized
-    "C_time": 2000.0 / 3600.0, # cost/s, equivalent to 2000 cost/hour
-    "k_acq": 0.0001,           # acquisition-cost multiplier to make approx like cost per flight
+    #$$$$$COST STUFF$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+    "Cf_base": 0.80,           # cost/kg of fuel
+    "C_time": 2000.0 / 3600.0, # cost/s
+    "k_acq": 0.0001,  # acquisition-cost multiplier to make approx like cost per flight
     "C_eng_ref": 2.0e7,        # normalized/reference total engine acquisition cost
-    "beta_base": -0.25,        # not sure
+    #$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+
+    #extra
+    "b" : 34.32 # [meters] 737-800 wing span, use to compare
 }
+
+
