@@ -32,7 +32,6 @@ class Residual(om.ImplicitComponent):
         self.add_output('m_total', val=100000)
         self.add_output('m_fuel',val=30000)
 
-
     def setup_partials(self):
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~   
         #derivatives of residual one...
@@ -108,7 +107,6 @@ class Residual(om.ImplicitComponent):
         outputs['m_total'] = (-(exp_term)/(1-exp_term))*m_fuel
         outputs['m_fuel'] = m_fuel
 
-        
     def linearize(self, inputs, outputs, partials):
         #dead ass inputs
         V = inputs['V_cruise']
