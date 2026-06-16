@@ -34,7 +34,7 @@ class BreguetRangeComp(om.ExplicitComponent):
         m_total = inputs['m_total']
         m_fuel = inputs['m_fuel']
 
-        outputs['R'] = (V / SFC) * (LD) * np.log(m_total / (m_total - m_fuel))
+        outputs['R'] = (V / (SFC)) * (LD) * np.log(m_total / (m_total - m_fuel))
 
     def compute_partials(self, inputs, partials): 
         V = inputs['V']
