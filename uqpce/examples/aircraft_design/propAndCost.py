@@ -7,10 +7,10 @@ class Propulsion(om.ExplicitComponent):
     def setup(self):
         
         #Parameters
-        self.add_input('SFC_ref', desc="Reference SFC technology factor")
+        self.add_input('SFC_ref', units='1/s', desc="Reference SFC technology factor")
         self.add_input('eta_base')
         self.add_input('kv_base')
-        self.add_input('V_ref', units="m/s", desc="Reference flight speed") #reference cruise speed?
+        self.add_input('V_ref', units="m/s", desc="Reference flight speed")
 
         #Global design variables
         self.add_input('SFC_tech', val=0., desc="SFC technology factor")
@@ -23,7 +23,7 @@ class Propulsion(om.ExplicitComponent):
         """
 
         #Output
-        self.add_output('SFC', units="mg/(N*s)", desc="Specific fuel consumption")
+        self.add_output('SFC', units="1/s", desc="Specific fuel consumption")
 
     def setup_partials(self):
         self.declare_partials('SFC', ['SFC_tech', 'V_cruise', 'SFC_ref', 'eta_base', 'kv_base', 'V_ref'])
@@ -65,7 +65,7 @@ class EngineWeight(om.ExplicitComponent):
     def setup(self):
         
         #Parameters
-        self.add_input('m_eng_ref')
+        self.add_input('m_eng_ref', units='kg')
         self.add_input('alpha_base')
 
         #Global design variables
@@ -106,18 +106,20 @@ class DOC(om.ExplicitComponent):
     def setup(self):
         
         #Parameters
-        self.add_input('Cf_base')
-        self.add_input('C_time')
+        self.add_input('Cf_base', units='USD/kg')
+        self.add_input('C_time', units='USD/s')
         self.add_input('k_acq')
-        self.add_input('C_eng_ref')
+        self.add_input('C_eng_ref', units='USD')
         self.add_input('beta_base')
+
+        self.add_input('N_pax', desc="Number of passengers")
 
         #Global design variables
         self.add_input('SFC_tech', val=0., desc="SFC technology factor")
         self.add_input('V_cruise', units="m/s", desc="Cruise speed")
 
         #Local design variable
-        self.add_input('R', units="km", desc="Breguet range")
+        self.add_input('R', units="m", desc="Breguet range")
         
         #Solver state
         self.add_input('m_fuel', units="kg", desc="Fuel mass") 
@@ -129,10 +131,14 @@ class DOC(om.ExplicitComponent):
         """
 
         #Output
-        self.add_output('DOC', desc="Direct operating cost")
+        self.add_output('DOC', units='USD', desc="Direct operating cost")
+
+        self.add_output('Dpm', desc="DOC/pax*km")
 
     def setup_partials(self):
         self.declare_partials('DOC', ['m_fuel', 'R', 'V_cruise', 'SFC_tech', 'Cf_base', 'C_time', 'k_acq', 'C_eng_ref', 'beta_base'])
+
+        self.declare_partials('Dpm', ['m_fuel', 'R', 'V_cruise', 'SFC_tech', 'Cf_base', 'C_time', 'k_acq', 'C_eng_ref', 'beta_base', 'N_pax', 'R'])
 
     def compute(self, inputs, outputs):
         SFC_tech = inputs['SFC_tech']
@@ -147,7 +153,11 @@ class DOC(om.ExplicitComponent):
         #delta_beta = inputs['delta_beta']
         #delta_Cf = inputs['delta_Cf']
 
-        outputs['DOC'] = Cf_base * m_fuel + C_time * (R/V_cruise) + k_acq * C_eng_ref * (1 + beta_base * SFC_tech)
+        N_pax = inputs['N_pax']
+
+        outputs['DOC'] = DOC = Cf_base * m_fuel + C_time * (R/V_cruise) + k_acq * C_eng_ref * (1 + beta_base * SFC_tech)
+
+        outputs['Dpm'] = DOC / (N_pax * R)
     
     def compute_partials(self, inputs, partials):
         SFC_tech = inputs['SFC_tech']
@@ -162,6 +172,10 @@ class DOC(om.ExplicitComponent):
         #delta_Cf = inputs['delta_Cf']
         #delta_beta = inputs['delta_beta']
 
+        N_pax = inputs['N_pax']
+
+        DOC = Cf_base * m_fuel + C_time * (R/V_cruise) + k_acq * C_eng_ref * (1 + beta_base * SFC_tech)
+
         partials['DOC', 'm_fuel'] = Cf_base
         partials['DOC', 'R'] = C_time / V_cruise
         partials['DOC', 'V_cruise'] = -C_time * (R / V_cruise**2)
@@ -172,3 +186,14 @@ class DOC(om.ExplicitComponent):
         partials['DOC', 'k_acq'] = C_eng_ref * (1 + beta_base * SFC_tech)
         partials['DOC', 'C_eng_ref'] = k_acq * (1 + beta_base * SFC_tech)
         partials['DOC', 'beta_base'] = (k_acq * C_eng_ref) * (SFC_tech)
+
+        partials['Dpm', 'm_fuel'] = partials['DOC', 'm_fuel'] / (N_pax * R)
+        partials['Dpm', 'R'] = -(Cf_base * m_fuel + k_acq * C_eng_ref * (1 + beta_base * SFC_tech)) / (N_pax * R**2)
+        partials['Dpm', 'V_cruise'] = partials['DOC', 'V_cruise'] / (N_pax * R)
+        partials['Dpm', 'SFC_tech'] = partials['DOC', 'SFC_tech'] / (N_pax * R)
+        partials['Dpm', 'Cf_base'] = partials['DOC', 'Cf_base'] / (N_pax * R)
+        partials['Dpm', 'C_time'] = partials['DOC', 'C_time'] / (N_pax * R)
+        partials['Dpm', 'k_acq'] = partials['DOC', 'k_acq'] / (N_pax * R)
+        partials['Dpm', 'C_eng_ref'] = partials['DOC', 'C_eng_ref'] / (N_pax * R)
+        partials['Dpm', 'beta_base'] = partials['DOC', 'beta_base'] / (N_pax * R)
+        partials['Dpm', 'N_pax'] = -(DOC / (N_pax**2 * R))
