@@ -1,5 +1,6 @@
 import openmdao.api as om
 import numpy as np
+from fixed import parameters
 
 class BreguetRangeComp(om.ExplicitComponent):
     """
@@ -20,9 +21,9 @@ class BreguetRangeComp(om.ExplicitComponent):
         n = self.options['vec_size']
         arange = np.arange(n)
 
-        self.add_input('V', val = 230, units='m/s') #design variable
+        self.add_input('V', val = parameters['V_ref'], units='m/s') #design variable
 
-        self.add_input('SFC', val = 1.7e-4, shape=(n,), units='1/s') #vector inputs
+        self.add_input('SFC', val = parameters['SFC_ref'], shape=(n,), units='1/s') #vector inputs
         self.add_input('LD', val = 16, shape=(n,))
         self.add_input('m_total', val = 50000, shape=(n,), units='kg')
         self.add_input('m_fuel', val = 10000, shape=(n,), units='kg')
