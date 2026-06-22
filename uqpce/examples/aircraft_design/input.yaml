@@ -1,0 +1,73 @@
+Variable 0:
+  name: delta_CD0
+  distribution: normal
+  mean: 1.0
+  stdev: 0.10
+  type: aleatory
+Variable 1:
+  name: delta_ks
+  distribution: normal
+  mean: 1.0
+  stdev: 0.15
+  type: aleatory
+Variable 2:
+  name: delta_e
+  distribution: normal
+  mean: 1.0
+  stdev: 0.05
+  type: aleatory
+Variable 3:
+  name: delta_eta
+  distribution: normal
+  mean: 1.0
+  stdev: 0.10
+  type: aleatory
+Variable 4:
+  name: delta_kv
+  distribution: normal
+  mean: 1.0
+  stdev: 0.20
+  type: aleatory
+Variable 5:
+  name: delta_alpha
+  distribution: normal
+  mean: 1.0
+  stdev: 0.10
+  type: aleatory
+Variable 6:
+  name: delta_kw
+  distribution: normal
+  mean: 1.0
+  stdev: 0.08
+  type: aleatory
+Variable 7:
+  name: delta_fsys
+  distribution: normal
+  mean: 1.0
+  stdev: 0.10
+  type: aleatory
+Variable 8:
+  name: delta_p
+  distribution: normal
+  mean: 1.0
+  stdev: 0.20
+  type: aleatory
+Variable 9:
+  name: delta_beta
+  distribution: normal
+  mean: 1.0
+  stdev: 0.15
+  type: aleatory
+Variable 10:
+  name: delta_Cf
+  distribution: normal
+  mean: 1.0
+  stdev: 0.15
+  type: aleatory
+Settings:
+    order: 2
+    backend: Agg
+    conv_threshold_percent: 0.000005
+    aleat_samp_size: 25000
+    track_convergence_off: True
+    significance: 0.05
