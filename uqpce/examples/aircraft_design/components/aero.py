@@ -19,39 +19,44 @@ from fixed import parameters
 
 class AeroDicipline(om.ExplicitComponent):
 
+    def initialize(self):
+        self.options.declare('vec_size', types=int)
+
     def setup(self):
+        n = self.options['vec_size']
+        arange = np.arange(n)
     #Inputs-start~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         #environemental inputs
-        self.add_input('g', val=9.81, desc="Coefficient of Gravitational Acceleration [m/s^2]")
-        self.add_input('rho', val=0.38, desc="Air Density [kg/m^3]")
+        self.add_input('g', val=9.81,units="m/s**2" ,desc="Coefficient of Gravitational Acceleration [m/s^2]")
+        self.add_input('rho', val=0.38,units="kg/m**3" ,desc="Air Density [kg/m^3]")
         #baseline inputs and stuff 
         self.add_input('C_D0_base', val=parameters['CD0_base'], desc="Baseline Drag Coefficient")
-        self.add_input('S_0', val=parameters['S_naught'], desc="Baseline Planform Area [m^2]")
-        self.add_input('ks_base',val=parameters['ks_base'], desc="Drag amplification factor [per unit area]")
+        self.add_input('S_0',val=parameters['S_naught'],units="m**2" , desc="Baseline Planform Area [m^2]")
+        self.add_input('ks_base',val=parameters['ks_base'],units="1/m**2", desc="Drag amplification factor [per unit area]")
         self.add_input('e_base', val=parameters['e_oswald_base'],desc="Oswald Efficiency Factor")
         
         #\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
         #design variable inputs
-        self.add_input('S',val=parameters['S_naught'],desc="Planform Area [m^2]")
-        self.add_input('V',val=parameters['S_naught'],desc="Cruising Free-stream Velocity [m/s]")
+        self.add_input('S',val=parameters['S_naught'],units="m**2",desc="Planform Area [m^2]")
+        self.add_input('V',val=parameters['S_naught'],units="m/s",desc="Cruising Free-stream Velocity [m/s]")
         self.add_input('AR',val=7.0,desc="Aspect Ratio of Planform")
         #I assume the value here will become the initial guess when selected as design variables 
         #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\\/\/\/\/\/\/\/\/\/\/\/\/\/\//\//\/\/\/\
 
         #coupled solver inputs? not sure how this will be handled, I assume just 
         #treat like regular input for now?
-        self.add_input('m_total',val=50000.0,desc="Total Mass [kg]")
+        self.add_input('m_total',val=50000.0,units="kg",desc="Total Mass [kg]")
 
-        self.add_input('delta_CD0',val=1.0,desc="placeholder var for drag coeff uncertainty until we figure it out and what not")
+        self.add_input('delta_CD0',val=1.0,shape=(n,),desc="placeholder var for drag coeff uncertainty until we figure it out and what not")
         #in future do we replacde with a vector containing points on the normal distribution?
-        self.add_input('delta_ks',val=1.0,desc="placeholder var for drag factor uncertainty until we figure it out and what not")
-        self.add_input('delta_e',val=1.0,desc="placeholder var for oswald uncertainty until we figure it out and what not")
+        self.add_input('delta_ks',val=1.0,shape=(n,),desc="placeholder var for drag factor uncertainty until we figure it out and what not")
+        self.add_input('delta_e',val=1.0,shape=(n,),desc="placeholder var for oswald uncertainty until we figure it out and what not")
     #Inputs-end~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     #outputs-start~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         self.add_output('CL',0.0,desc="Lift Coefficient of Configuration")
-        self.add_output('CD',0.0,desc="Drag Coefficient of Configuration")
-        self.add_output('LD',0.0,desc="Lift to Drag Ratio of Configuration")
+        self.add_output('CD',0.0,shape=(n,),desc="Drag Coefficient of Configuration")
+        self.add_output('LD',0.0,shape=(n,),desc="Lift to Drag Ratio of Configuration")
     #outputs-end~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     
