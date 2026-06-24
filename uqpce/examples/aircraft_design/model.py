@@ -1,14 +1,16 @@
 import openmdao.api as om
-from components.aero import AeroDicipline
-from components.BreguetRangeComp import BreguetRangeComp
-from components.propAndCost import Propulsion
-from components.propAndCost import EngineWeight
-from components.propAndCost import DOC
-from components.WeightsComp import Weights_Struct
+from aero import AeroDicipline
+from BreguetRangeComp import BreguetRangeComp
+from propAndCost import Propulsion
+from propAndCost import EngineWeight
+from propAndCost import DOC
+from WeightsComp import Weights_Struct
 #from mass import Residual
-from components.total_mass_comp import TotalMassComp
+from total_mass_comp import TotalMassComp
 import numpy as np
 import matplotlib.pyplot as plt
+
+from aero import distribute_input
 class CoupledGroup(om.Group):
 
     def setup(self):
@@ -106,19 +108,6 @@ def initialize(prob):
     prob.set_val('aircraft.DOC.C_eng_ref', parameters['C_eng_ref'])
     prob.set_val('aircraft.DOC.N_pax', parameters['N_pax'])
 
-    """
-    #determined by inspection using 737-800 values
-    "fsys_base": 0.19357,
-    "kw_base": 53.0,
-    
-    "p_base": 1.0,          #1 until further notice
-    "eta_base": 0.20,       # shitty guesstimate
-    "kv_base": 0.20,        # shitty guesstimate
-    "alpha_base": -0.20,    # shitty guesstimate
-    "beta_base": 0.2,       # shitty guesstimate
-    "ks_base": 7.0e-5,    # SHITIEST guesstimate
-    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    """
     #~~~~~tuning parameters
         #fraction of total mass comprising 'systems' and stuff
     prob.set_val('aircraft.Weight.fsys_base', parameters['fsys_base'])
