@@ -2,7 +2,7 @@ Variable 0:
   name: delta_CD0
   distribution: normal
   mean: 1.0
-  stdev: 0.10
+  stdev: 0.01
   type: aleatory
 Variable 1:
   name: delta_ks
@@ -62,7 +62,7 @@ Variable 10:
   name: delta_Cf
   distribution: normal
   mean: 1.0
-  stdev: 0.15
+  stdev: 0.01
   type: aleatory
 Settings:
     order: 2
@@ -71,3 +71,4 @@ Settings:
     aleat_samp_size: 25000
     track_convergence_off: True
     significance: 0.05
+    # plot: True

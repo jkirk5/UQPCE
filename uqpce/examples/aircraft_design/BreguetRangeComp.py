@@ -26,7 +26,7 @@ class BreguetRangeComp(om.ExplicitComponent):
         self.add_input('SFC', val = parameters['SFC_ref'], shape=(n,), units='1/s') #vector inputs
         self.add_input('LD', val = 16, shape=(n,))
         self.add_input('m_total', val = 50000, shape=(n,), units='kg')
-        self.add_input('m_fuel', val = 10000, shape=(n,), units='kg')
+        self.add_input('m_fuel', val = 10000, units='kg', shape=(n,))
 
         self.add_output('R', val = 1e6, shape=(n,), units='m')
 
@@ -34,7 +34,7 @@ class BreguetRangeComp(om.ExplicitComponent):
         n= self.options['vec_size']
         indices = np.arange(n)
 
-        self.declare_partials('R', 'V', rows= indices, cols=np.zeros(n, dtype=int))
+        self.declare_partials('R', ['V'], rows= indices, cols=np.zeros(n, dtype=int))
         self.declare_partials('R', ['SFC', 'LD', 'm_total', 'm_fuel'], rows=indices, cols=indices)
 
     def compute (self, inputs, outputs):
