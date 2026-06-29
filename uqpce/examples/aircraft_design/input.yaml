@@ -71,4 +71,4 @@ Settings:
     aleat_samp_size: 25000
     track_convergence_off: True
     significance: 0.05
-    # plot: True
+    plot: True
