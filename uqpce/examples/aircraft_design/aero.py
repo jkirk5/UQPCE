@@ -22,7 +22,7 @@ from openmdao.utils.assert_utils import assert_check_partials
 from scipy.special import erfinv, erf
 import matplotlib.pyplot as plt
 
-class AeroDicipline(om.ExplicitComponent):
+class AeroDiscipline(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare('vec_size', types=int)
@@ -50,7 +50,7 @@ class AeroDicipline(om.ExplicitComponent):
 
         #coupled solver inputs? not sure how this will be handled, I assume just 
         #treat like regular input for now?
-        self.add_input('m_total',val=50000.0,units="kg",desc="Total Mass [kg]")
+        self.add_input('m_total',val=50000.0,units="kg",desc="Total Mass [kg]", shape=(n,))
 
         self.add_input('delta_CD0',val=1.0,shape=(n,),desc="placeholder var for drag coeff uncertainty until we figure it out and what not")
         #in future do we replacde with a vector containing points on the normal distribution?
@@ -59,19 +59,22 @@ class AeroDicipline(om.ExplicitComponent):
     #Inputs-end~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     #outputs-start~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        self.add_output('CL',0.0,desc="Lift Coefficient of Configuration")
+        self.add_output('CL',0.0,shape=(n,),desc="Lift Coefficient of Configuration")
         self.add_output('CD',0.0,shape=(n,),desc="Drag Coefficient of Configuration")
         self.add_output('LD',0.0,shape=(n,),desc="Lift to Drag Ratio of Configuration")
     #outputs-end~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     
     def setup_partials(self):
+        n = self.options['vec_size']
+        arange = np.arange(n)
+    
     #Sensitivities-start~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         self.declare_partials(of="CL",wrt="V",method="exact")
         self.declare_partials(of="CL",wrt="S",method="exact")
         #self.declare_partials(of="CL",wrt="AR",method="exact")
         #des variables^
-        self.declare_partials(of="CL",wrt="m_total",method="exact")
+        self.declare_partials(of="CL",wrt="m_total",method="exact", rows=arange, cols=arange)
         self.declare_partials(of="CL",wrt="rho",method="exact")
         self.declare_partials(of="CL",wrt="g",method="exact")
         #all the rest of CL wrt other inputs are zero by default, so not needed
@@ -80,31 +83,31 @@ class AeroDicipline(om.ExplicitComponent):
         self.declare_partials(of="CD",wrt="V",method="exact")
         self.declare_partials(of="CD",wrt="S",method="exact")
         self.declare_partials(of="CD",wrt="AR",method="exact")
-        self.declare_partials(of="CD",wrt="m_total",method="exact")
+        self.declare_partials(of="CD",wrt="m_total",method="exact", rows=arange, cols=arange)
         self.declare_partials(of="CD",wrt="rho",method="exact")
         self.declare_partials(of="CD",wrt="g",method="exact")
         self.declare_partials(of="CD",wrt="C_D0_base",method="exact")
         self.declare_partials(of="CD",wrt="S_0",method="exact")
         self.declare_partials(of="CD",wrt="e_base",method="exact")
-        self.declare_partials(of="CD",wrt="delta_CD0",method="exact")
-        self.declare_partials(of="CD",wrt="delta_e",method="exact")
+        self.declare_partials(of="CD",wrt="delta_CD0",method="exact", rows=arange, cols=arange)
+        self.declare_partials(of="CD",wrt="delta_e",method="exact", rows=arange, cols=arange)
         self.declare_partials(of="CD",wrt="ks_base",method="exact")
-        self.declare_partials(of="CD",wrt="delta_ks",method="exact")
+        self.declare_partials(of="CD",wrt="delta_ks",method="exact", rows=arange, cols=arange)
 
 
         self.declare_partials(of="LD",wrt="V",method="exact")
         self.declare_partials(of="LD",wrt="S",method="exact")
         self.declare_partials(of="LD",wrt="AR",method="exact")
-        self.declare_partials(of="LD",wrt="m_total",method="exact")
+        self.declare_partials(of="LD",wrt="m_total",method="exact", rows=arange, cols=arange)
         self.declare_partials(of="LD",wrt="rho",method="exact")
         self.declare_partials(of="LD",wrt="g",method="exact")
         self.declare_partials(of="LD",wrt="C_D0_base",method="exact")
         self.declare_partials(of="LD",wrt="S_0",method="exact")
         self.declare_partials(of="LD",wrt="e_base",method="exact")
-        self.declare_partials(of="LD",wrt="delta_CD0",method="exact")
-        self.declare_partials(of="LD",wrt="delta_e",method="exact")
+        self.declare_partials(of="LD",wrt="delta_CD0",method="exact", rows=arange, cols=arange)
+        self.declare_partials(of="LD",wrt="delta_e",method="exact", rows=arange, cols=arange)
         self.declare_partials(of="LD",wrt="ks_base",method="exact")
-        self.declare_partials(of="LD",wrt="delta_ks",method="exact")
+        self.declare_partials(of="LD",wrt="delta_ks",method="exact", rows=arange, cols=arange)
 
        
 
@@ -247,7 +250,7 @@ class TestAero(unittest.TestCase):
         self.prob = om.Problem()
         
         #dummy model to test aero
-        self.prob.model.add_subsystem('Aero',AeroDicipline(),promotes=['*'])
+        self.prob.model.add_subsystem('Aero',AeroDiscipline(),promotes=['*'])
         #promotes makes sure evrything is accesible at self level
         #runs after every, individual, function that starts with test__
         #i guess its used to reset state of object being tested if needed
