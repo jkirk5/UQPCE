@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 #helpers
 from aero import distribute_input
 #components
-from aero import AeroDicipline
+from aero import AeroDiscipline
 from BreguetRangeComp import BreguetRangeComp
 from propAndCost import Propulsion
 from propAndCost import EngineWeight
@@ -24,12 +24,12 @@ class CoupledGroup(om.Group):
         self.set_input_defaults('V', val=235.0)       # m/s
         self.set_input_defaults('SFC_tech', val=0.0)  # baseline technology
 
-        self.add_subsystem('Prop', Propulsion(), promotes_inputs=['V', 'SFC_tech'])
-        self.add_subsystem('Engine', EngineWeight(), promotes_inputs=['SFC_tech'])
-        self.add_subsystem('Aero', AeroDicipline(), promotes_inputs=['S', 'AR', 'V'])
-        self.add_subsystem('Weight', Weights_Struct(), promotes_inputs=['S', 'AR', 'V'])
-        self.add_subsystem('Mass', TotalMassComp())
-        self.add_subsystem('Range', BreguetRangeComp(), promotes_inputs=['V'])
+        self.add_subsystem('Prop', Propulsion(vec_size=1), promotes_inputs=['V', 'SFC_tech'])
+        self.add_subsystem('Engine', EngineWeight(vec_size=1), promotes_inputs=['SFC_tech'])
+        self.add_subsystem('Aero', AeroDiscipline(vec_size=1), promotes_inputs=['S', 'AR', 'V'])
+        self.add_subsystem('Weight', Weights_Struct(vec_size=1), promotes_inputs=['S', 'AR', 'V'])
+        self.add_subsystem('Mass', TotalMassComp(vec_size=1))
+        self.add_subsystem('Range', BreguetRangeComp(vec_size=1), promotes_inputs=['V'])
 
         Balance = om.BalanceComp()
         Balance.add_balance(
@@ -241,25 +241,30 @@ class ExampleMDA(om.Group):
         self.add_subsystem(
                             'Prop', Propulsion(vec_size=n),
                             promotes_inputs=['V', 'SFC_tech', 'delta_eta', 'delta_kv'],
+                            promotes_outputs=['SFC']
                           )
 
         self.add_subsystem(
                             'Engine', EngineWeight(vec_size=n), 
                             promotes_inputs=['SFC_tech','delta_alpha'],
+                            promotes_outputs=['m_engine']
                            )
 
         self.add_subsystem(
-                           'Aero', AeroDicipline(vec_size=n), 
+                           'Aero', AeroDiscipline(vec_size=n), 
                            promotes_inputs=['S', 'AR', 'V', 'delta_CD0', 'delta_ks', 'delta_e'],
+                           promotes_outputs=['CL','CD']
                            )
 
         self.add_subsystem(
                            'Weight', Weights_Struct(vec_size=n),
                             promotes_inputs=['S', 'AR', 'V', 'delta_fsys','delta_kw','delta_p'],
+                            promotes_outputs=['m_empty']
                            )
 
         self.add_subsystem(
-                           'Mass', TotalMassComp(vec_size=n)
+                           'Mass', TotalMassComp(vec_size=n),
+                           promotes_outputs=['m_total']
                            )
 
         self.add_subsystem(
@@ -280,19 +285,19 @@ class ExampleMDA(om.Group):
             ref=16000.0,
             res_ref=1.0e6,
             )
-        self.add_subsystem('Balance', Balance)
+        self.add_subsystem('Balance', Balance, promotes_outputs=['m_fuel'])
 
 
-        self.connect('Balance.m_fuel', 'Range.m_fuel')
-        self.connect('Mass.m_total', 'Range.m_total')
+        self.connect('m_fuel', 'Range.m_fuel')
+        self.connect('m_total', 'Range.m_total')
         self.connect('Aero.LD', 'Range.LD')
-        self.connect('Prop.SFC', 'Range.SFC')
+        self.connect('SFC', 'Range.SFC')
         self.connect('Range.R', 'Balance.R')
-        self.connect('Balance.m_fuel', 'Mass.m_fuel')
-        self.connect('Weight.m_empty', 'Mass.m_empty')
-        self.connect('Mass.m_total', 'Aero.m_total')
-        self.connect('Engine.m_engine', 'Weight.m_engine')
-        self.connect('Mass.m_total', 'Weight.m_total')
+        self.connect('m_fuel', 'Mass.m_fuel')
+        self.connect('m_empty', 'Mass.m_empty')
+        self.connect('m_total', 'Aero.m_total')
+        self.connect('m_engine', 'Weight.m_engine')
+        self.connect('m_total', 'Weight.m_total')
 
 
         self.nonlinear_solver = om.NewtonSolver(solve_subsystems=True)
@@ -345,6 +350,7 @@ def uqpce_main_script():
                           'delta_eta', 'delta_kv','delta_alpha',
                           'delta_CD0','delta_ks','delta_e',
                           'delta_fsys','delta_kw','delta_p']), 
+        promotes_outputs=['m_fuel','m_empty','m_engine','m_total','CL','CD','SFC']
     )
 
     prob.model.add_subsystem(
@@ -361,9 +367,9 @@ def uqpce_main_script():
         promotes_outputs=['DOC','Dpm']
     )
 
-    prob.model.connect('MDA.Aero.CL','CL_constraint.CL')
+    prob.model.connect('CL','CL_constraint.CL')
 
-    prob.model.connect('MDA.Balance.m_fuel','DOC_objective.m_fuel')
+    prob.model.connect('m_fuel','DOC_objective.m_fuel')
     prob.model.connect('MDA.Range.R','DOC_objective.R')
 
     #---------------------------------------------------------------------------
@@ -379,17 +385,18 @@ def uqpce_main_script():
             tail='both',
             epistemic_cnt=epistemic_cnt,
             aleatory_cnt=aleatory_cnt,
-            uncert_list=['CL_constraint', 'DOC','Dpm'],
+            uncert_list=['CL_constraint', 'DOC','Dpm', 'm_fuel','m_empty','m_engine','m_total','CL','CD','SFC'],
             tanh_omega=1e-3,
-            sample_ref0=[0.0, 0.0, 0.0],
-            sample_ref=[0.1, 5.0e4, 0.01],
+            sample_ref0=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,0.0,0.0,0.0],
+            sample_ref=[0.1, 5.0e4, 0.01, 1000, 1000, 1000, 1000,0.1,0.1,0.1],
         ),
-        promotes_inputs=['CL_constraint', 'DOC', 'Dpm'],
+        promotes_inputs=['CL_constraint', 'DOC', 'Dpm', 'm_fuel','m_empty','m_engine','m_total','CL','CD','SFC'],
         promotes_outputs=[
             'CL_constraint:resampled_responses',
             'CL_constraint:ci_lower',
             'CL_constraint:ci_upper',
             'CL_constraint:mean',
+            'CL_constraint:mean_plus_var',
 
             'DOC:resampled_responses',
             'DOC:ci_lower',
@@ -401,7 +408,49 @@ def uqpce_main_script():
             'Dpm:ci_lower',
             'Dpm:ci_upper',
             'Dpm:mean',
-            'Dpm:mean_plus_var'
+            'Dpm:mean_plus_var',
+
+            'm_fuel:resampled_responses',
+            'm_fuel:ci_lower',
+            'm_fuel:ci_upper',
+            'm_fuel:mean',
+            'm_fuel:mean_plus_var',
+
+            'm_empty:resampled_responses',
+            'm_empty:ci_lower',
+            'm_empty:ci_upper',
+            'm_empty:mean',
+            'm_empty:mean_plus_var',
+
+            'm_engine:resampled_responses',
+            'm_engine:ci_lower',
+            'm_engine:ci_upper',
+            'm_engine:mean',
+            'm_engine:mean_plus_var',
+
+            'm_total:resampled_responses',
+            'm_total:ci_lower',
+            'm_total:ci_upper',
+            'm_total:mean',
+            'm_total:mean_plus_var',
+
+            'CL:resampled_responses',
+            'CL:ci_lower',
+            'CL:ci_upper',
+            'CL:mean',
+            'CL:mean_plus_var',
+
+            'CD:resampled_responses',
+            'CD:ci_lower',
+            'CD:ci_upper',
+            'CD:mean',
+            'CD:mean_plus_var',
+
+            'SFC:resampled_responses',
+            'SFC:ci_lower',
+            'SFC:ci_upper',
+            'SFC:mean',
+            'SFC:mean_plus_var'
         ]
     )
 
@@ -463,68 +512,19 @@ def uqpce_main_script():
     #print(f'Constraint {CL_con}', prob.get_val(CL_con))
     #print(f'Objective {obj} is', prob.get_val(obj))
 
-    print('Fuel mass ', prob.get_val('MDA.Balance.m_fuel'))
+    #print('Fuel mass ', prob.get_val('MDA.m_fuel'))
     print('Range ', prob.get_val('MDA.Range.R'))
-    print('DOC ', prob.get_val('DOC'))
-    print('Dpm ', prob.get_val('Dpm'))
+    #print('DOC ', prob.get_val('DOC'))
+    #print('Dpm ', prob.get_val('Dpm'))
 
-    DOC_dist = prob.get_val('DOC:resampled_responses').ravel()
-    DOC_ci_lower = prob.get_val('DOC:ci_lower').item()
-    DOC_ci_upper = prob.get_val('DOC:ci_upper').item()
-    DOC_mu = prob.get_val('DOC:mean').item()
-    DOC_var_plus_mu = prob.get_val('DOC:mean_plus_var').item()
-    DOC_var = DOC_var_plus_mu - DOC_mu
+    print('CL', prob.get_val('MDA.Aero.CL'))
+    print('CD', prob.get_val('MDA.Aero.CD'))
+
+    plot_uqpce_pretty(prob)
 
 
-
-    dpm_dist = prob.get_val('Dpm:resampled_responses').ravel()
-    Dpm_ci_lower = prob.get_val('Dpm:ci_lower').item()
-    Dpm_ci_upper = prob.get_val('Dpm:ci_upper').item()
-    Dpm_mu = prob.get_val('Dpm:mean').item()
-    Dpm_var_plus_mu = prob.get_val('Dpm:mean_plus_var').item()
-    Dpm_var = Dpm_var_plus_mu - Dpm_mu
-
-
-    plt.rcParams.update({
-        "text.usetex" : True,
-        "font.family" : "serif"
-    })
-
-    fig, ax = plt.subplots(2)
-
-    fig.suptitle(r"Direct Operating Cost PDFs")
-
-    ax[0].hist(DOC_dist,bins=300,density=True)
-    ax[0].axvline(DOC_ci_lower, color='red', linewidth=2,linestyle=':', label=rf"CI lower $\approx$ {DOC_ci_lower:.4f}")
-    ax[0].axvline(DOC_ci_upper, color='red', linewidth=2,linestyle=':', label=rf"CI upper $\approx$ {DOC_ci_upper:.4f}")
-    ax[0].set_xlabel(r"$\mathrm{DOC}$ [USD]",labelpad=15)
-    ax[0].set_ylabel(r"Probability Density",labelpad=10)
-    ax[0].set_title(rf"Estimated DOC Distribution: $\mu = {DOC_mu:.4f}, \ \ \sigma^2 = {DOC_var:.4e}$")
-    ax[0].legend()
-
-    ax[1].hist(dpm_dist,bins=300,density=True)
-    ax[1].axvline(Dpm_ci_lower, color='red', linewidth=2, linestyle=':', label=rf"CI lower $\approx$ {Dpm_ci_lower:.4e}")
-    ax[1].axvline(Dpm_ci_upper, color='red', linewidth=2,linestyle=':',label=rf"CI upper $\approx$ {Dpm_ci_upper:.4e}")
-    ax[1].set_xlabel(r"$\mathrm{DOC}_{\mathrm{pkm}} \ \ [\frac{\mathrm{USD}}{\mathrm{px}\cdot\mathrm{km}}]$",labelpad=15)
-    ax[1].set_ylabel(r"Probability Density",labelpad=10)
-    ax[1].set_title(rf"Estimated $\mathrm{{DOC}}_{{\mathrm{{pkm}}}}$ Distribution: $\mu = {Dpm_mu:.4e}, \ \ \sigma^2 = {Dpm_var:.4e}$")
-    ax[1].legend(loc="best")
-    """
-    ax[2].hist(m_fuel_dist,bins=300,density=True)
-    ax[2].set_xlabel(r"$m_{\mathrm{fuel}}$ [kg]")
-    ax[2].set_ylabel(r"Number of Responses")
-    ax[2].set_title(r"Estimated $m_{\mathrm{fuel}}$ Probability Density")
-    """
-
-    fig.subplots_adjust(
-    hspace=0.5,  # vertical spacing between rows
-    wspace=0.3   # horizontal spacing between columns
-    )
-
-    plt.show()
-
-    interface.analysis(prob, 'Dpm', 'input.yaml', 'run_matrix_generated.dat')
-    interface.analysis(prob, 'DOC', 'input.yaml', 'run_matrix_generated.dat')
+    #interface.analysis(prob, 'Dpm', 'input.yaml', 'run_matrix_generated.dat')
+    #interface.analysis(prob, 'DOC', 'input.yaml', 'run_matrix_generated.dat')
 
 def original_main_script():
     prob = om.Problem()
@@ -581,8 +581,8 @@ def original_main_script():
 
     prob.run_driver()
 
-    #prob.check_totals(of=['aircraft.DOC.DOC'],wrt=['S', 'AR', 'SFC_tech','V'],
-    #                 compact_print=True,form='central',step=1e-3)
+    prob.check_totals(of=['aircraft.DOC.DOC'],wrt=['S', 'AR', 'SFC_tech','V'],
+                     compact_print=True, method='fd')
 
     print('\n~~~~Optimized Design~~~~\n\n')
     print('S:', prob.get_val('S'))
@@ -611,8 +611,8 @@ def original_main_script():
     print('Reference SFC:', parameters['SFC_ref'])
 
 def main():
-    uqpce_main_script()
-    #original_main_script()    
+    #uqpce_main_script()
+    original_main_script()    
     
 if __name__ == "__main__":
     main()

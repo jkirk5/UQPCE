@@ -1,4 +1,5 @@
 from fixed import *
+import matplotlib.pyplot as plt
 
 def display_results(prob):
     print('\n~~~~Outputs~~~~\n\n')
@@ -139,6 +140,185 @@ def initialize_og(prob):
         #small value above. Note units are 1/m**2
     prob.set_val('aircraft.Aero.ks_base', parameters['ks_base'])
 
+def plot_uqpce_pretty(prob):
+
+    CL_constraint_dist = prob.get_val('CL_constraint:resampled_responses').ravel()
+    print(type(CL_constraint_dist))
+    print(np.shape(CL_constraint_dist))
+    CL_constraint_ci_lower = prob.get_val('CL_constraint:ci_lower').item()
+    CL_constraint_ci_upper = prob.get_val('CL_constraint:ci_upper').item()
+    CL_constraint_mu = prob.get_val('CL_constraint:mean').item()
+    CL_constraint_var_plus_mu = prob.get_val('CL_constraint:mean_plus_var').item()
+    CL_constraint_var = CL_constraint_var_plus_mu - CL_constraint_mu
+
+    DOC_dist = prob.get_val('DOC:resampled_responses').ravel()
+    DOC_ci_lower = prob.get_val('DOC:ci_lower').item()
+    DOC_ci_upper = prob.get_val('DOC:ci_upper').item()
+    DOC_mu = prob.get_val('DOC:mean').item()
+    DOC_var_plus_mu = prob.get_val('DOC:mean_plus_var').item()
+    DOC_var = DOC_var_plus_mu - DOC_mu
+
+    dpm_dist = prob.get_val('Dpm:resampled_responses').ravel()
+    Dpm_ci_lower = prob.get_val('Dpm:ci_lower').item()
+    Dpm_ci_upper = prob.get_val('Dpm:ci_upper').item()
+    Dpm_mu = prob.get_val('Dpm:mean').item()
+    Dpm_var_plus_mu = prob.get_val('Dpm:mean_plus_var').item()
+    Dpm_var = Dpm_var_plus_mu - Dpm_mu
+
+    m_fuel_dist = prob.get_val('m_fuel:resampled_responses').ravel()
+    m_fuel_ci_lower = prob.get_val('m_fuel:ci_lower').item()
+    m_fuel_ci_upper = prob.get_val('m_fuel:ci_upper').item()
+    m_fuel_mu = prob.get_val('m_fuel:mean').item()
+    m_fuel_var_plus_mu = prob.get_val('m_fuel:mean_plus_var').item()
+    m_fuel_var = m_fuel_var_plus_mu - m_fuel_mu
+
+    m_empty_dist = prob.get_val('m_empty:resampled_responses').ravel()
+    m_empty_ci_lower = prob.get_val('m_empty:ci_lower').item()
+    m_empty_ci_upper = prob.get_val('m_empty:ci_upper').item()
+    m_empty_mu = prob.get_val('m_empty:mean').item()
+    m_empty_var_plus_mu = prob.get_val('m_empty:mean_plus_var').item()
+    m_empty_var = m_empty_var_plus_mu - m_empty_mu
+
+    m_engine_dist = prob.get_val('m_engine:resampled_responses').ravel()
+    m_engine_ci_lower = prob.get_val('m_engine:ci_lower').item()
+    m_engine_ci_upper = prob.get_val('m_engine:ci_upper').item()
+    m_engine_mu = prob.get_val('m_engine:mean').item()
+    m_engine_var_plus_mu = prob.get_val('m_engine:mean_plus_var').item()
+    m_engine_var = m_engine_var_plus_mu - m_engine_mu
+
+    m_total_dist = prob.get_val('m_total:resampled_responses').ravel()
+    m_total_ci_lower = prob.get_val('m_total:ci_lower').item()
+    m_total_ci_upper = prob.get_val('m_total:ci_upper').item()
+    m_total_mu = prob.get_val('m_total:mean').item()
+    m_total_var_plus_mu = prob.get_val('m_total:mean_plus_var').item()
+    m_total_var = m_total_var_plus_mu - m_total_mu
+
+    SFC_dist = prob.get_val('SFC:resampled_responses').ravel()
+    SFC_ci_lower = prob.get_val('SFC:ci_lower').item()
+    SFC_ci_upper = prob.get_val('SFC:ci_upper').item()
+    SFC_mu = prob.get_val('SFC:mean').item()
+    SFC_var_plus_mu = prob.get_val('SFC:mean_plus_var').item()
+    SFC_var = SFC_var_plus_mu - SFC_mu
+
+    CL_dist = prob.get_val('CL:resampled_responses').ravel()
+    CL_ci_lower = prob.get_val('CL:ci_lower').item()
+    CL_ci_upper = prob.get_val('CL:ci_upper').item()
+    CL_mu = prob.get_val('CL:mean').item()
+    CL_var_plus_mu = prob.get_val('CL:mean_plus_var').item()
+    CL_var = CL_var_plus_mu - CL_mu
+
+    CD_dist = prob.get_val('CD:resampled_responses').ravel()
+    CD_ci_lower = prob.get_val('CD:ci_lower').item()
+    CD_ci_upper = prob.get_val('CD:ci_upper').item()
+    CD_mu = prob.get_val('CD:mean').item()
+    CD_var_plus_mu = prob.get_val('CD:mean_plus_var').item()
+    CD_var = CD_var_plus_mu - CD_mu
+
+
+    plt.rcParams.update({
+        "text.usetex" : True,
+        "font.family" : "serif"
+    })
+
+    fig, ax = plt.subplots(2)
+
+    #fig.suptitle(r"Direct Operating Cost PDFs")
+
+    ax[0].hist(DOC_dist,bins=50,density=True)
+    ax[0].axvline(DOC_ci_lower, color='red', linewidth=2,linestyle=':', label=rf"CI lower $\approx$ {DOC_ci_lower:.4f}")
+    ax[0].axvline(DOC_ci_upper, color='red', linewidth=2,linestyle=':', label=rf"CI upper $\approx$ {DOC_ci_upper:.4f}")
+    ax[0].set_xlabel(r"$\mathrm{DOC}$ [USD]",labelpad=15,fontsize=18)
+    ax[0].set_ylabel(r"Probability Density",labelpad=10,fontsize=18)
+    ax[0].set_title(rf"Estimated DOC Distribution: $\mu = {DOC_mu:.4f}, \ \ \sigma^2 = {DOC_var:.4e}$",fontsize=24)
+    ax[0].legend()
+
+    ax[1].hist(dpm_dist,bins=50,density=True)
+    ax[1].axvline(Dpm_ci_lower, color='red', linewidth=2, linestyle=':', label=rf"CI lower $\approx$ {Dpm_ci_lower:.4e}")
+    ax[1].axvline(Dpm_ci_upper, color='red', linewidth=2,linestyle=':',label=rf"CI upper $\approx$ {Dpm_ci_upper:.4e}")
+    ax[1].set_xlabel(r"$\mathrm{DOC}_{\mathrm{pkm}} \ \ [\frac{\mathrm{USD}}{\mathrm{px}\cdot\mathrm{km}}]$",labelpad=15,fontsize=18)
+    ax[1].set_ylabel(r"Probability Density",labelpad=10,fontsize=18)
+    ax[1].set_title(rf"Estimated $\mathrm{{DOC}}_{{\mathrm{{pkm}}}}$ Distribution: $\mu = {Dpm_mu:.4e}, \ \ \sigma^2 = {Dpm_var:.4e}$",fontsize=24)
+    ax[1].legend(loc="best")
+
+    fig.subplots_adjust(
+    hspace=0.5,  # vertical spacing between rows
+    wspace=0.3   # horizontal spacing between columns
+    )
+    
+    
+    fig_mass, ax_mass = plt.subplots(4)
+
+    ax_mass[2].hist(m_fuel_dist,bins=50,density=True)
+    ax_mass[2].axvline(m_fuel_ci_lower, color='red', linewidth=2, linestyle=':', label=rf"CI lower $\approx$ {m_fuel_ci_lower:.4e}")
+    ax_mass[2].axvline(m_fuel_ci_upper, color='red', linewidth=2,linestyle=':',label=rf"CI upper $\approx$ {m_fuel_ci_upper:.4e}")
+    ax_mass[2].set_xlabel(r"$m_{\mathrm{fuel}}$ [kg]",fontsize=18)
+    ax_mass[2].set_ylabel(r"Probability Density",labelpad=10,fontsize=18)
+    ax_mass[2].set_title(rf"Estimated $m_{{\mathrm{{fuel}}}}$ Distribution $\mu = {m_fuel_mu:.4e}, \ \ \sigma^2 = {m_fuel_var:.4e}$",fontsize=24)
+    ax_mass[2].legend()
+
+    ax_mass[1].hist(m_empty_dist,bins=50,density=True)
+    ax_mass[1].axvline(m_empty_ci_lower, color='red', linewidth=2, linestyle=':', label=rf"CI lower $\approx$ {m_empty_ci_lower:.4e}")
+    ax_mass[1].axvline(m_empty_ci_upper, color='red', linewidth=2,linestyle=':',label=rf"CI upper $\approx$ {m_empty_ci_upper:.4e}")
+    ax_mass[1].set_xlabel(r"$m_{\mathrm{empty}}$ [kg]",fontsize=18)
+    ax_mass[1].set_ylabel(r"Probability Density",labelpad=10,fontsize=18)
+    ax_mass[1].set_title(rf"Estimated $m_{{\mathrm{{empty}}}}$ Distribution $\mu = {m_empty_mu:.4e}, \ \ \sigma^2 = {m_empty_var:.4e}$",fontsize=24)
+    ax_mass[1].legend()
+
+    ax_mass[0].hist(m_engine_dist,bins=50,density=True)
+    ax_mass[0].axvline(m_engine_ci_lower, color='red', linewidth=2, linestyle=':', label=rf"CI lower $\approx$ {m_engine_ci_lower:.4e}")
+    ax_mass[0].axvline(m_engine_ci_upper, color='red', linewidth=2,linestyle=':',label=rf"CI upper $\approx$ {m_engine_ci_upper:.4e}")
+    ax_mass[0].set_xlabel(r"$m_{\mathrm{engine}}$ [kg]",fontsize=18)
+    ax_mass[0].set_ylabel(r"Probability Density",labelpad=10,fontsize=18)
+    ax_mass[0].set_title(rf"Estimated $m_{{\mathrm{{engine}}}}$ Distribution $\mu = {m_engine_mu:.4e}, \ \ \sigma^2 = {m_engine_var:.4e}$",fontsize=24)
+    ax_mass[0].legend()
+
+    ax_mass[3].hist(m_total_dist,bins=50,density=True)
+    ax_mass[3].axvline(m_total_ci_lower, color='red', linewidth=2, linestyle=':', label=rf"CI lower $\approx$ {m_total_ci_lower:.4e}")
+    ax_mass[3].axvline(m_total_ci_upper, color='red', linewidth=2,linestyle=':',label=rf"CI upper $\approx$ {m_total_ci_upper:.4e}")
+    ax_mass[3].set_xlabel(r"$m_{\mathrm{total}}$ [kg]",fontsize=18)
+    ax_mass[3].set_ylabel(r"Probability Density",labelpad=10,fontsize=18)
+    ax_mass[3].set_title(rf"Estimated $m_{{\mathrm{{total}}}}$ Distribution $\mu = {m_total_mu:.4e}, \ \ \sigma^2 = {m_total_var:.4e}$",fontsize=24)
+    ax_mass[3].legend()
+
+    fig_cl_constraint, ax_cl_constraint = plt.subplots()
+
+    ax_cl_constraint.hist(CL_constraint_dist,bins=50,density=True)
+    ax_cl_constraint.axvline(CL_constraint_ci_lower, color='red', linewidth=2, linestyle=':', label=rf"CI lower $\approx$ {CL_constraint_ci_lower:.4e}")
+    ax_cl_constraint.axvline(CL_constraint_ci_upper, color='red', linewidth=2,linestyle=':',label=rf"CI upper $\approx$ {CL_constraint_ci_upper:.4e}")
+    ax_cl_constraint.set_xlabel(r"$C_L$ Residual",fontsize=18)
+    ax_cl_constraint.set_ylabel(r"Probability Density",labelpad=10,fontsize=18)
+    ax_cl_constraint.set_title(rf"Estimated $C_L$ Residual Distribution $C_{{L_{{\mathrm{{target}}}}}}=0.53$, $\mu = {CL_constraint_mu:.4e}, \ \ \sigma^2 = {CL_constraint_var:.4e}$",fontsize=24)
+    ax_cl_constraint.legend()
+
+    fig_SFC, ax_SFC = plt.subplots()
+
+    ax_SFC.hist(SFC_dist,bins=50,density=True)
+    ax_SFC.axvline(SFC_ci_lower, color='red', linewidth=2, linestyle=':', label=rf"CI lower $\approx$ {SFC_ci_lower:.4e}")
+    ax_SFC.axvline(SFC_ci_upper, color='red', linewidth=2,linestyle=':',label=rf"CI upper $\approx$ {SFC_ci_upper:.4e}")
+    ax_SFC.set_xlabel(r"$\mathrm{SFC}$",fontsize=18)
+    ax_SFC.set_ylabel(r"Probability Density",labelpad=10,fontsize=18)
+    ax_SFC.set_title(rf"Estimated $\mathrm{{SFC}}$ Distribution $\mu = {SFC_mu:.4e}, \ \ \sigma^2 = {SFC_var:.4e}$",fontsize=24)
+    ax_SFC.legend()
+
+    fig_polar = plt.figure()
+    ax_polar = fig_polar.add_subplot(projection='3d')
+
+    hist, cd_edges, cl_edges = np.histogram2d(CD_dist,CL_dist,bins=100)
+    cd_pos, cl_pos = np.meshgrid(cd_edges[:-1] + 0.25, cl_edges[:-1] + 0.25, indexing="ij")
+
+    cd_pos = cd_pos.ravel()
+    cl_pos = cl_pos.ravel()
+    prob_dens_pos = 0
+
+    dcd = dcl = 0.5 * np.ones_like(prob_dens_pos)
+    dprob = hist.ravel()
+
+    
+    ax_polar.bar3d(cd_pos, cl_pos, prob_dens_pos, dcd, dcl, dprob)
+    
+    
+
+    plt.show()
 
 import numpy as np
 from scipy.special import erfinv, erf
