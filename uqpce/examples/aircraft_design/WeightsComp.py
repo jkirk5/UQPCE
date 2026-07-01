@@ -1,7 +1,7 @@
 import openmdao.api as om 
 import numpy as np
 from fixed import parameters
-
+#hi
 class Weights_Struct(om.ExplicitComponent):
     """
     Evaluates the weights & structures for a coupled Breguet range with MDAO

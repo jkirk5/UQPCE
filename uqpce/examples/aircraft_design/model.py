@@ -25,11 +25,20 @@ class CoupledGroup(om.Group):
         self.set_input_defaults('SFC_tech', val=0.0)  # baseline technology
 
         self.add_subsystem('Prop', Propulsion(vec_size=1), promotes_inputs=['V', 'SFC_tech'])
+
         self.add_subsystem('Engine', EngineWeight(vec_size=1), promotes_inputs=['SFC_tech'])
+        
+        #^^add at problem level
+
         self.add_subsystem('Aero', AeroDiscipline(vec_size=1), promotes_inputs=['S', 'AR', 'V'])
+        
         self.add_subsystem('Weight', Weights_Struct(vec_size=1), promotes_inputs=['S', 'AR', 'V'])
+        
         self.add_subsystem('Mass', TotalMassComp(vec_size=1))
+        
         self.add_subsystem('Range', BreguetRangeComp(vec_size=1), promotes_inputs=['V'])
+
+        
 
         Balance = om.BalanceComp()
         Balance.add_balance(
@@ -44,28 +53,24 @@ class CoupledGroup(om.Group):
             ref=16000.0,
             res_ref=1.0e6,
             )
-        self.add_subsystem('Balance', Balance)
+        self.add_subsystem('Balance', Balance, 
+                           promotes_outputs=['m_fuel'])
 
         
         self.add_subsystem('DOC', DOC(), promotes_inputs=['V', 'SFC_tech'])
 
-        self.connect('Balance.m_fuel', 'Range.m_fuel')
+        self.connect('m_fuel', 'Range.m_fuel')
         self.connect('Mass.m_total', 'Range.m_total')
         self.connect('Aero.LD', 'Range.LD')
         self.connect('Prop.SFC', 'Range.SFC')
-
         self.connect('Range.R', 'Balance.R')
-
-        self.connect('Balance.m_fuel', 'Mass.m_fuel')
+        self.connect('m_fuel', 'Mass.m_fuel')
         self.connect('Weight.m_empty', 'Mass.m_empty')
-
         self.connect('Mass.m_total', 'Aero.m_total')
-
         self.connect('Engine.m_engine', 'Weight.m_engine')
         self.connect('Mass.m_total', 'Weight.m_total')
-
         self.connect('Range.R', 'DOC.R')
-        self.connect('Balance.m_fuel', 'DOC.m_fuel')
+        self.connect('m_fuel', 'DOC.m_fuel')
 
         self.nonlinear_solver = om.NewtonSolver(solve_subsystems=True)
         self.nonlinear_solver.options['iprint'] = 2
@@ -527,6 +532,7 @@ def uqpce_main_script():
     #interface.analysis(prob, 'DOC', 'input.yaml', 'run_matrix_generated.dat')
 
 def original_main_script():
+
     prob = om.Problem()
     prob.model.add_subsystem('aircraft', CoupledGroup(), promotes=['*'])
     
@@ -609,6 +615,10 @@ def original_main_script():
     print('\n~~~~\n')
     print('SFC:', prob.get_val('aircraft.Prop.SFC'))
     print('Reference SFC:', parameters['SFC_ref'])
+   
+ 
+
+    
 
 def main():
     #uqpce_main_script()

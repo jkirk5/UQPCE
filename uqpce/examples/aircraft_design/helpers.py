@@ -303,18 +303,63 @@ def plot_uqpce_pretty(prob):
     fig_polar = plt.figure()
     ax_polar = fig_polar.add_subplot(projection='3d')
 
-    hist, cd_edges, cl_edges = np.histogram2d(CD_dist,CL_dist,bins=100)
-    cd_pos, cl_pos = np.meshgrid(cd_edges[:-1] + 0.25, cl_edges[:-1] + 0.25, indexing="ij")
+# Optional: force the histogram to use the physical range you expect
+    cd_bins = np.linspace(np.min(CD_dist), np.max(CD_dist), 60)
+    cl_bins = np.linspace(np.min(CL_dist), np.max(CL_dist), 60)
 
-    cd_pos = cd_pos.ravel()
-    cl_pos = cl_pos.ravel()
-    prob_dens_pos = 0
+    print(cd_bins)
 
-    dcd = dcl = 0.5 * np.ones_like(prob_dens_pos)
-    dprob = hist.ravel()
+    print(cl_bins)
+
+    hist, cd_edges, cl_edges = np.histogram2d(
+        CD_dist,
+        CL_dist,
+        bins=[cd_bins, cl_bins],
+        density=True
+    )
+
+    # bar3d wants the lower-left corner of each bar
+    cd_left, cl_left = np.meshgrid(
+        cd_edges[:-1],
+        cl_edges[:-1],
+        indexing="ij"
+    )
+
+    # Widths of each bin
+    dcd, dcl = np.meshgrid(
+        np.diff(cd_edges),
+        np.diff(cl_edges),
+        indexing="ij"
+    )
+
+    x = cd_left.ravel()
+    y = cl_left.ravel()
+    z = np.zeros_like(x)
+
+    dx = dcd.ravel()
+    dy = dcl.ravel()
+    dz = hist.ravel()
 
     
-    ax_polar.bar3d(cd_pos, cl_pos, prob_dens_pos, dcd, dcl, dprob)
+    mask = dz > 0
+    
+    ax_polar.bar3d(
+        x[mask],
+        y[mask],
+        z[mask],
+        dx[mask],
+        dy[mask],
+        dz[mask]
+    )
+
+    ax_polar.set_xlabel(r"$C_D$", labelpad=10, fontsize=14)
+    ax_polar.set_ylabel(r"$C_L$", labelpad=10, fontsize=14)
+    ax_polar.set_zlabel(r"Probability Density", labelpad=10, fontsize=14)
+
+    #ax_polar.set_xlim(0.027, 0.028)
+    #ax_polar.set_ylim(0.50, 0.52)
+
+    ax_polar.set_title(r"Joint Distribution of $C_D$ and $C_L$", fontsize=18)
     
     
 

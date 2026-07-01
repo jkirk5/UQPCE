@@ -1,7 +1,7 @@
 import openmdao.api as om
 import numpy as np
 from fixed import parameters
-
+#hi
 class BreguetRangeComp(om.ExplicitComponent):
     """
     Compute Breguet range from fuel mass

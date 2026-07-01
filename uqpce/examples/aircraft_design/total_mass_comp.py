@@ -1,6 +1,6 @@
 import openmdao.api as om
 import numpy as np
-
+#hi
 class TotalMassComp(om.ExplicitComponent):
     """
     Component for "TotalMassComp" box containing analytical derivatives

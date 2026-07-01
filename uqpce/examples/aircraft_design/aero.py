@@ -1,6 +1,6 @@
 import numpy as np
 import openmdao.api as om
-
+#hi
 #dtermined inputs
 #planform area (S)
 # Aspect Ratio (AR)
