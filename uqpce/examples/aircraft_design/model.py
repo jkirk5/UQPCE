@@ -314,7 +314,7 @@ def original_main_script():
     prob.model.add_design_var('SFC_tech', lower=-1, upper=1, ref=1)
 
     # Declare Objective and Constraint Functions
-    prob.model.add_objective('DOC', ref=1.0e4, units='USD')
+    prob.model.add_objective('Dpm', ref=1.0e-1)
     prob.model.add_constraint('CL', lower=0.4, upper=0.53, ref=0.5)
 
     prob.setup()
@@ -334,7 +334,7 @@ def original_main_script():
 
     prob.run_driver()
 
-    # prob.check_totals(of=['DOC'],wrt=['S', 'AR', 'SFC_tech','V_cruise'],
+    # prob.check_totals(of=['Dpm'], wrt=['S', 'AR', 'SFC_tech','V_cruise'],
     #                  compact_print=True, method='fd')
 
     print('\n~~~~Optimized Design~~~~\n\n')
@@ -349,6 +349,7 @@ def original_main_script():
     print('\n~~~~Outputs~~~~\n\n')
     
     print('DOC [$/flight]:', prob.get_val('DOC'))
+    print('DOC/pax*km [$/pax*km]:', prob.get_val('Dpm'))
     print('\nMASSES\n')
     print('m_total:', prob.get_val('m_total'))
     print('m_empty:', prob.get_val('m_empty'))

@@ -56,7 +56,7 @@ Variable 9:
   name: delta_beta
   distribution: normal
   mean: 1.0
-  stdev: 0.15
+  stdev: 0.05
   type: aleatory
 Variable 10:
   name: delta_Cf
