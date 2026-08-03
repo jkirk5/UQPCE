@@ -7,6 +7,13 @@ from disciplines.objective import *
 from disciplines.doc import *
 from disciplines.dpm import *
 
+#for julia stuff
+import os
+import openmdao.api as om
+from juliacall import Main as jl
+from omjlcomps import JuliaExplicitComp
+
+
 class CoupledDisciplines(om.Group):
 
     def initialize(self):
@@ -46,14 +53,27 @@ class CoupledDisciplines(om.Group):
         #^######################################################^#
 
         ###Aerodynamics Component#################################
-        self.add_subsystem(
-            'Aero',AeroComp(vec_size=n),
-            promotes_inputs=['S','AR','V_cruise',
-            'delta_CD0','delta_ks','delta_e',
-            'm_total'], 
-            promotes_outputs=['CL','CD','LD','WL']
-                           )
+        #self.add_subsystem(
+        #    'Aero',AeroCompJax(vec_size=n),
+        #    promotes_inputs=['S','AR','V_cruise',
+        #    'delta_CD0','delta_ks','delta_e',
+        #    'm_total'], 
+        #    promotes_outputs=['CL','CD','LD','WL']
+        #                   )
         #^######################################################^#
+
+        #~~~ Temporary Julia Aero Comp ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        jl.include(os.path.abspath(r"C:\Users\lkohler\Projects\MDAO\UQPCE\uqpce\examples\aircraft_design\disciplines\Julia\aero.jl"))
+        jl_aero_comp = jl.AeroCompJulia.get_aero_comp(n)
+        AeroCompJulia = JuliaExplicitComp(jlcomp=jl_aero_comp)
+        self.add_subsystem(
+                    'Aero',AeroCompJulia,
+                    promotes_inputs=['S','AR','V_cruise',
+                    'delta_CD0','delta_ks','delta_e',
+                    'm_total'], 
+                    promotes_outputs=['CL','CD','LD','WL']
+                                   )
+        #~~~ Temporary Julia Aero Comp ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         ###Range Residual#########################################
         initial_guess = np.ones(n)*16000 #kg

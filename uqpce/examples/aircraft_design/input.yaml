@@ -65,10 +65,10 @@ Variable 10:
   stdev: 0.01
   type: aleatory
 Settings:
-    order: 3
+    order: 2
     backend: Agg
     conv_threshold_percent: 0.000005
-    aleat_samp_size: 250000
+    aleat_samp_size: 25000
     track_convergence_off: True
     significance: 0.05
     plot: True
