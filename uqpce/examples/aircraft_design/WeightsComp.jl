@@ -49,3 +49,4 @@ function get_weights_ad_comp(vec_size:: Integer)
         X_ca,
         params= nothing
     )
+end

@@ -1,4 +1,3 @@
-module AeroCompJulia
 using ADTypes: ADTypes
 using ComponentArrays: ComponentVector
 using ForwardDiff: ForwardDiff
@@ -83,11 +82,12 @@ function get_aero_comp(vec_size)
     :rho       => "kg/m**3",
     :S_0       => "m**2",
     :WL        => "N/m**2",
+    :CL        => "unitless",
+    :CD        => "unitless",
+    :LD        => "unitless"
     )
 
     return OpenMDAOCore.DenseADExplicitComp(
         ad_backend, aero!, outputs, inputs, units_dict=units_dict)
-
-end
 
 end

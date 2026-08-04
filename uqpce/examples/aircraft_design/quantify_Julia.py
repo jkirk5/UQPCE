@@ -27,6 +27,9 @@ jl.include(os.path.join(current_dir, 'disciplines_Julia', 'DOC.jl'))
 jl.include(os.path.join(current_dir, 'disciplines_Julia', 'Dpm.jl'))
 jl.include(os.path.join(current_dir, 'disciplines_Julia', 'engine.jl'))
 jl.include(os.path.join(current_dir, 'disciplines_Julia', 'total_mass.jl'))
+jl.include(os.path.join(current_dir, 'disciplines_Julia', 'aero.jl'))
+jl.include(os.path.join(current_dir, 'disciplines_Julia', 'BreguetRangeComp.jl'))
+jl.include(os.path.join(current_dir, 'disciplines_Julia', 'WeightsComp.jl'))
 
 class CoupledDisciplines(om.Group):
 
@@ -36,10 +39,13 @@ class CoupledDisciplines(om.Group):
     def setup(self):
         n = self.options['vec_size']
         total_mass_comp = JuliaExplicitComp(jlcomp=jl.get_total_mass_ad(n))
+        aero_comp = JuliaExplicitComp(jlcomp=jl.get_aero_comp(n))
+        breguet_range_comp = JuliaExplicitComp(jlcomp=jl.get_breguet_ad_comp(n))
+        weights_comp = JuliaExplicitComp(jlcomp=jl.get_weights_ad_comp(n))
 
         # Aerodynamics Component
         self.add_subsystem(
-            'Aero', AeroComp(vec_size=n),
+            'Aero', aero_comp,
             promotes_inputs=['S', 'AR', 'V_cruise',
                              'C_D0_base', 'ks_base', 'e_base', 'S_0',
                              'delta_CD0', 'delta_ks', 'delta_e',
@@ -49,7 +55,7 @@ class CoupledDisciplines(om.Group):
 
         # Structural Weight Component
         self.add_subsystem(
-            'Weight', WeightsComp(vec_size=n),
+            'Weight', weights_comp,
             promotes_inputs=['S', 'AR', 'V_cruise',
                              'kw_base', 'fsys_base', 'p_base',
                              'delta_kw', 'delta_fsys', 'delta_p',
@@ -67,7 +73,7 @@ class CoupledDisciplines(om.Group):
 
         # Breguet Range Component
         self.add_subsystem(
-            'Range', BreguetRangeComp(vec_size=n),
+            'Range', breguet_range_comp,
             promotes_inputs=['V_cruise',
                              'm_total', 'LD',
                              'SFC',
@@ -96,8 +102,8 @@ class CoupledDisciplines(om.Group):
         newton = self.nonlinear_solver = om.NewtonSolver(solve_subsystems=True)
         self.nonlinear_solver.options['iprint'] = 2
         self.nonlinear_solver.options['maxiter'] = 500
-        self.nonlinear_solver.options['atol'] = 1e-5
-        self.nonlinear_solver.options['rtol'] = 1e-3
+        self.nonlinear_solver.options['atol'] = 1e-8
+        self.nonlinear_solver.options['rtol'] = 1e-8
 
         line_search = newton.linesearch = om.ArmijoGoldsteinLS(bound_enforcement='vector')
         line_search.options['maxiter'] = 20
@@ -121,6 +127,7 @@ class CL_constraint(om.ExplicitComponent):
 
         # should be identity matrix
         self.declare_partials('CL_constraint', 'CL', rows=arange, cols=arange)
+        self.declare_partials('CL_constraint', 'CL_target')
 
     def compute(self, inputs, outputs):
 
@@ -132,6 +139,7 @@ class CL_constraint(om.ExplicitComponent):
     def compute_partials(self, inputs, partials):
 
         partials['CL_constraint', 'CL'] = -1
+        partials['CL_constraint', 'CL_target'] = 1
 
 class WingLoad_constraint(om.ExplicitComponent):
     
@@ -396,15 +404,15 @@ def main():
     uncertain_prob = om.Problem()
     configure_subsystems(uncertain_prob,vector_size=resp_cnt)
 
-    # determ_prob.model.set_input_defaults('S', val=124.58, units='m**2')
-    # determ_prob.model.set_input_defaults('AR', val=9.45)
+    uncertain_prob.model.set_input_defaults('S', val=124.58, units='m**2')
+    uncertain_prob.model.set_input_defaults('AR', val=9.45)
     uncertain_prob.model.set_input_defaults('V_cruise', val=240.5, units='m/s')
-    # determ_prob.model.set_input_defaults('SFC_tech', val=0.0)
+    uncertain_prob.model.set_input_defaults('SFC_tech', val=0.0)
 
     uncertain_prob.driver = om.ScipyOptimizeDriver()
     uncertain_prob.driver.options['optimizer'] = 'SLSQP'
     uncertain_prob.driver.options['maxiter'] = 1000
-    uncertain_prob.driver.options['tol'] = 1e-10
+    uncertain_prob.driver.options['tol'] = 1e-6
     uncertain_prob.driver.options['disp'] = True
 
     #---------------------------------------------------------------------------
