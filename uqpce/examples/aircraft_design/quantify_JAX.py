@@ -8,11 +8,11 @@ from uqpce.mdao import interface
 from organize import initialize
 from helpers import plot_objective, plot_coefficients, get_values
 
-from disciplines.BreguetRange import BreguetRangeComp
-from disciplines.aero import AeroComp
+from disciplines_JAX.BreguetRangeCompJAX import BreguetRangeComp
+from disciplines_JAX.aero_jax import AeroCompJax
 from disciplines_JAX.total_mass_comp import TotalMassComp
 from disciplines_JAX.propulsion import PropulsionComp
-from disciplines.weight import WeightsComp
+from disciplines_JAX.WeightsCompJAX import WeightsComp
 # from disciplines.weight import EngineWeightComp
 from disciplines_JAX.engine_weight import EngineWeightComp
 from disciplines_JAX.doc import DOC
@@ -30,7 +30,7 @@ class CoupledDisciplines(om.Group):
 
         # Aerodynamics Component
         self.add_subsystem(
-            'Aero', AeroComp(vec_size=n),
+            'Aero', AeroCompJax(vec_size=n),
             promotes_inputs=['S', 'AR', 'V_cruise',
                              'C_D0_base', 'ks_base', 'e_base', 'S_0',
                              'delta_CD0', 'delta_ks', 'delta_e',
@@ -87,12 +87,12 @@ class CoupledDisciplines(om.Group):
         newton = self.nonlinear_solver = om.NewtonSolver(solve_subsystems=True)
         self.nonlinear_solver.options['iprint'] = 2
         self.nonlinear_solver.options['maxiter'] = 500
-        self.nonlinear_solver.options['atol'] = 1e-5
-        self.nonlinear_solver.options['rtol'] = 1e-3
+        self.nonlinear_solver.options['atol'] = 1e-8
+        self.nonlinear_solver.options['rtol'] = 1e-8
 
-        # line_search = newton.linesearch = om.ArmijoGoldsteinLS(bound_enforcement='vector')
-        # line_search.options['maxiter'] = 20
-        # line_search.options['print_bound_enforce'] = True
+        line_search = newton.linesearch = om.ArmijoGoldsteinLS(bound_enforcement='vector')
+        line_search.options['maxiter'] = 20
+        line_search.options['print_bound_enforce'] = True
         self.linear_solver = om.DirectSolver()
 
 class CL_constraint(om.ExplicitComponent):
@@ -112,6 +112,7 @@ class CL_constraint(om.ExplicitComponent):
 
         # should be identity matrix
         self.declare_partials('CL_constraint', 'CL', rows=arange, cols=arange)
+        self.declare_partials('CL_constraint', 'CL_target')
 
     def compute(self, inputs, outputs):
 
@@ -123,6 +124,7 @@ class CL_constraint(om.ExplicitComponent):
     def compute_partials(self, inputs, partials):
 
         partials['CL_constraint', 'CL'] = -1
+        partials['CL_constraint', 'CL_target'] = 1
 
 class WingLoad_constraint(om.ExplicitComponent):
     
@@ -383,10 +385,15 @@ def main():
     uncertain_prob = om.Problem()
     configure_subsystems(uncertain_prob,vector_size=resp_cnt)
 
+    uncertain_prob.model.set_input_defaults('S', val=124.58, units='m**2')
+    uncertain_prob.model.set_input_defaults('AR', val=9.45)
+    uncertain_prob.model.set_input_defaults('V_cruise', val=240.5, units='m/s')
+    uncertain_prob.model.set_input_defaults('SFC_tech', val=0.0)
+
     uncertain_prob.driver = om.ScipyOptimizeDriver()
     uncertain_prob.driver.options['optimizer'] = 'SLSQP'
     uncertain_prob.driver.options['maxiter'] = 1000
-    uncertain_prob.driver.options['tol'] = 1e-10
+    uncertain_prob.driver.options['tol'] = 1e-6
     uncertain_prob.driver.options['disp'] = True
 
     #---------------------------------------------------------------------------
