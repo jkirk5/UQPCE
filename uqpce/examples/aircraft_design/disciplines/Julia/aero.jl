@@ -54,9 +54,9 @@ function get_aero_comp(vec_size)
     ad_backend = ADTypes.AutoForwardDiff()
 
     inputs = ComponentVector(
-    S = 1.0,
-    V_cruise = 1.0,
-    AR = 1.0,
+    S = 1.0, #Look here chat
+    V_cruise = 1.0, #look here chat
+    AR = 1.0, # look here chat
     m_total =  ones(vec_size),
     delta_CD0 =  ones(vec_size),
     delta_ks = ones(vec_size),
