@@ -1,11 +1,13 @@
 import openmdao.api as om 
 import numpy as np
-from fixed import *
-#hi
-class Weights_Struct(om.ExplicitComponent):
+from fixed import parameters
 
+class WeightsComp(om.ExplicitComponent):
+    """
+    Component for "WeightsComp" box containing analytical derivatives
+    """
     def initialize(self):
-        self.options.declare('vec_size', types=int)
+        self.options.declare('vec_size', default=1, types=int)
 
     def setup(self):
         n= self.options['vec_size']
@@ -20,14 +22,14 @@ class Weights_Struct(om.ExplicitComponent):
         self.add_input('m_engine', units='kg', shape=(n,))
 
         #uncertain parameters
-        self.add_input("delta_kw",val=np.ones(n), units=None, shape=(n,)) 
-        self.add_input("delta_fsys",val=np.ones(n), units=None, shape=(n,))
-        self.add_input("delta_p",val=np.ones(n), units=None, shape=(n,))
+        self.add_input("delta_kw",val=np.ones(n), units="unitless", shape=(n,)) 
+        self.add_input("delta_fsys",val=np.ones(n), units="unitless", shape=(n,))
+        self.add_input("delta_p",val=np.ones(n), units="unitless", shape=(n,))
 
         #tuning parameters
-        self.add_input('kw_base', units=None)
-        self.add_input('fsys_base', units=None)
-        self.add_input('p_base', units=None)
+        self.add_input('kw_base', units="unitless")
+        self.add_input('fsys_base', units="unitless")
+        self.add_input('p_base', units="unitless")
         
         #constant parameters
         self.add_input('V_ref', val=parameters['V_ref'], units='m/s')
@@ -139,28 +141,27 @@ class Weights_Struct(om.ExplicitComponent):
 
         partials['m_empty', 'm_fuse'] = 1.0
 
-
-class EngineWeight(om.ExplicitComponent):
+class EngineWeightComp(om.ExplicitComponent):
     """
     Component for "EngineWeightComp" box containing analytical derivatives
     """
     def initialize(self):
-        self.options.declare('vec_size', types=int)
+        self.options.declare('vec_size', default=1, types=int)
 
     def setup(self):
         n = self.options['vec_size']
 
         #proposed design variables
-        self.add_input('SFC_tech', units=None)
+        self.add_input('SFC_tech', units="unitless")
 
         #model variable (output from other component)
         #n/a
 
         #uncertain parameters
-        self.add_input('delta_alpha', val=1.0, shape=(n,))
+        self.add_input('delta_alpha', val=1.0, units='unitless', shape=(n,))
         
         #tuning parameters
-        self.add_input('alpha_base')
+        self.add_input('alpha_base', units='unitless')
 
         #constant parameters
         self.add_input('m_eng_ref', val=parameters['m_eng_ref'], units='kg')

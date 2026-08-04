@@ -7,7 +7,7 @@ from disciplines.objective import *
 from disciplines.BreguetRange import *
 from disciplines.aero import *
 from disciplines.total_mass_comp import *
-from disciplines.propAndCost import *
+from uqpce.examples.aircraft_design.disciplines.propulsion import *
 from disciplines.weight import *
 
 from fixed import parameters

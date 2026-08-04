@@ -1,12 +1,225 @@
 import openmdao.api as om
 import os
+import numpy as np
 
 from uqpce.mdao.uqpcegroup import UQPCEGroup
 from uqpce.mdao import interface
-from openmdao.utils.assert_utils import assert_check_partials
 
-from organize import configure_subsystems, initialize
+from organize import initialize
 from helpers import plot_objective, plot_coefficients, get_values
+
+from disciplines.BreguetRange import BreguetRangeComp
+from disciplines.aero import AeroComp
+from disciplines_JAX.total_mass_comp import TotalMassComp
+from disciplines_JAX.propulsion import PropulsionComp
+from disciplines.weight import WeightsComp
+# from disciplines.weight import EngineWeightComp
+from disciplines_JAX.engine_weight import EngineWeightComp
+from disciplines_JAX.doc import DOC
+from disciplines_JAX.dpm import Dpm
+
+from fixed import parameters
+
+class CoupledDisciplines(om.Group):
+
+    def initialize(self):
+        self.options.declare('vec_size', default=1, types=int)
+
+    def setup(self):
+        n = self.options['vec_size']
+
+        # Aerodynamics Component
+        self.add_subsystem(
+            'Aero', AeroComp(vec_size=n),
+            promotes_inputs=['S', 'AR', 'V_cruise',
+                             'C_D0_base', 'ks_base', 'e_base', 'S_0',
+                             'delta_CD0', 'delta_ks', 'delta_e',
+                             'm_total'], 
+            promotes_outputs=['CL', 'CD', 'LD', 'WL']
+        )
+
+        # Structural Weight Component
+        self.add_subsystem(
+            'Weight', WeightsComp(vec_size=n),
+            promotes_inputs=['S', 'AR', 'V_cruise',
+                             'kw_base', 'fsys_base', 'p_base',
+                             'delta_kw', 'delta_fsys', 'delta_p',
+                             'm_total', 'm_engine', 'm_fuse',
+                             'V_ref'],
+            promotes_outputs=['m_wing', 'm_empty']
+        )
+
+        # Total Mass Comp
+        self.add_subsystem(
+            'Mass', TotalMassComp(vec_size=n),
+            promotes_inputs=['m_empty', 'm_fuel', 'm_payload'],
+            promotes_outputs=['m_total']
+        )
+
+        # Breguet Range Component
+        self.add_subsystem(
+            'Range', BreguetRangeComp(vec_size=n),
+            promotes_inputs=['V_cruise',
+                             'm_total', 'LD',
+                             'SFC',
+                             'm_fuel'],
+            promotes_outputs=['R']
+        )
+
+        # Range Residual
+        Balance = om.BalanceComp()
+        
+        Balance.add_balance(
+            name='m_fuel', val=np.ones(n)*16000,
+            units='kg', lower=1000.0, upper=50000.0,
+            lhs_name='R', rhs_name='R_target',
+            rhs_val=parameters['R_target'],
+            eq_units='m', ref=16000.0, res_ref=1.0e6,
+        )
+        
+        self.add_subsystem(
+            'Balance', Balance,
+            promotes_inputs=['R', 'R_target'],
+            promotes_outputs=['m_fuel']
+        )
+        
+        # Residual Solver Options
+        newton = self.nonlinear_solver = om.NewtonSolver(solve_subsystems=True)
+        self.nonlinear_solver.options['iprint'] = 2
+        self.nonlinear_solver.options['maxiter'] = 500
+        self.nonlinear_solver.options['atol'] = 1e-5
+        self.nonlinear_solver.options['rtol'] = 1e-3
+
+        # line_search = newton.linesearch = om.ArmijoGoldsteinLS(bound_enforcement='vector')
+        # line_search.options['maxiter'] = 20
+        # line_search.options['print_bound_enforce'] = True
+        self.linear_solver = om.DirectSolver()
+
+class CL_constraint(om.ExplicitComponent):
+    
+    def initialize(self):
+        self.options.declare('vec_size', default=1, types=int)
+
+    def setup(self):
+        n = self.options['vec_size']
+        arange = np.arange(n)
+
+        self.add_input('CL', units="unitless", shape=(n,))
+
+        self.add_input('CL_target', val=0.53)
+
+        self.add_output('CL_constraint', shape=(n,))
+
+        # should be identity matrix
+        self.declare_partials('CL_constraint', 'CL', rows=arange, cols=arange)
+
+    def compute(self, inputs, outputs):
+
+        CL = inputs['CL']
+        CL_target = inputs['CL_target']
+
+        outputs['CL_constraint'] = CL_target - CL
+
+    def compute_partials(self, inputs, partials):
+
+        partials['CL_constraint', 'CL'] = -1
+
+class WingLoad_constraint(om.ExplicitComponent):
+    
+    def initialize(self):
+        self.options.declare('vec_size', default=1, types=int)
+
+    def setup(self):
+        n = self.options['vec_size']
+        arange = np.arange(n)
+
+        self.add_input('WL', shape=(n,))
+
+        self.add_input('WL_target', val=5905.0)
+
+        self.add_output('WL_constraint', shape=(n,))
+
+        # should be identity matrix
+        self.declare_partials('WL_constraint', 'WL', rows=arange, cols=arange)
+
+    def compute(self, inputs, outputs):
+
+        WL = inputs['WL']
+        WL_target = inputs['WL_target']
+
+        outputs['WL_constraint'] = WL_target - WL
+
+    def compute_partials(self, inputs, partials):
+
+        partials['WL_constraint', 'WL'] = 1
+
+def configure_subsystems(prob, vector_size=1):
+    # Propulsion Component
+    prob.model.add_subsystem(
+        'Prop', 
+        PropulsionComp(vec_size=vector_size),
+        promotes_inputs=['V_cruise', 'SFC_tech',
+                         'SFC_ref', 'V_ref',
+                         'eta_base', 'kv_base',
+                         'delta_eta', 'delta_kv'],
+        promotes_outputs=['SFC']
+    )
+
+    # Engine Weight Component
+    prob.model.add_subsystem(
+        'Engine', 
+        EngineWeightComp(vec_size=vector_size), 
+        promotes_inputs=['SFC_tech', 
+                         'm_eng_ref', 'alpha_base',
+                         'delta_alpha'],
+        promotes_outputs=['m_engine']
+    )
+
+    prob.model.add_subsystem(
+        'AeroStruct', 
+        CoupledDisciplines(vec_size=vector_size), 
+        promotes_inputs=['V_cruise', 'S', 'AR',
+                         'C_D0_base', 'ks_base', 'e_base', 'S_0',
+                         'kw_base', 'fsys_base', 'p_base',
+                         'V_ref', 'R_target', 'SFC',
+                         'm_fuse', 'm_payload', 'm_engine',
+                         'delta_CD0', 'delta_ks', 'delta_e',
+                         'delta_fsys', 'delta_kw', 'delta_p'], 
+        promotes_outputs=['m_fuel', 'm_empty', 'm_wing',
+                          'm_total', 'LD', 'CL', 'CD', 'WL', 'R']
+    )
+
+   # prob.model.add_subsystem(
+   #     'WingLoad_constraint', 
+   #     WingLoad_constraint(vec_size=vector_size), 
+   #     promotes_inputs=['WL'], 
+   #     promotes_outputs=['WL_constraint']
+   # )
+
+    prob.model.add_subsystem(
+        'LiftCoeff_constraint', 
+        CL_constraint(vec_size=vector_size), 
+        promotes_inputs=['CL'], 
+        promotes_outputs=['CL_constraint']
+    )
+
+    prob.model.add_subsystem(
+        'DOC_objective', 
+        DOC(vec_size=vector_size), 
+        promotes_inputs=['V_cruise', 'SFC_tech',
+                         'Cf_base', 'beta_base',
+                         'C_time', 'k_acq', 'C_eng_ref', 
+                         'delta_beta', 'delta_Cf', 
+                         'R', 'm_fuel'], 
+        promotes_outputs=['DOC']
+    )
+
+    prob.model.add_subsystem(
+        'DPM_objective', 
+        Dpm(vec_size=vector_size), 
+        promotes_inputs=['DOC', 'R', 'N_pax'], 
+        promotes_outputs=['Dpm']
+    )
 
 def deterministic_optimization(prob):
     # Optimizer
@@ -29,13 +242,11 @@ def deterministic_optimization(prob):
     prob.model.add_constraint('CL_constraint', lower=0, upper=0.53, ref=0.1)
     # determ_prob.model.add_constraint('WL_constraint', lower=-5905, upper=5905, ref=0.1)
 
-    prob.setup(force_alloc_complex=True)
+    prob.setup()
     initialize(prob)
 
     prob.run_driver()
     # display_results(determ_prob)
-    # partial_data = prob.check_partials(out_stream=None, method='cs')
-    # assert_check_partials(partial_data, atol=1e-12, rtol=1e-12)
 
     S_opt = prob.get_val('S')
     AR_opt = prob.get_val('AR')
@@ -142,7 +353,13 @@ def main():
 
     configure_subsystems(determ_prob)
 
+    determ_prob.model.set_input_defaults('S', val=124.58, units='m**2')
+    determ_prob.model.set_input_defaults('AR', val=9.45)
+    determ_prob.model.set_input_defaults('V_cruise', val=240.5, units='m/s')
+    determ_prob.model.set_input_defaults('SFC_tech', val=0.0)
+
     optimal = deterministic_optimization(determ_prob)
+    print(optimal)
     
     #---------------------------------------------------------------------------
     #                               Input Files
@@ -169,7 +386,7 @@ def main():
     uncertain_prob.driver = om.ScipyOptimizeDriver()
     uncertain_prob.driver.options['optimizer'] = 'SLSQP'
     uncertain_prob.driver.options['maxiter'] = 1000
-    uncertain_prob.driver.options['tol'] = 1e-6
+    uncertain_prob.driver.options['tol'] = 1e-10
     uncertain_prob.driver.options['disp'] = True
 
     #---------------------------------------------------------------------------
@@ -217,9 +434,9 @@ def main():
     #                             Add Constraints
     #---------------------------------------------------------------------------
 
-    uncertain_prob.model.add_constraint('m_fuel:mean', lower=1e3, upper=5e4, ref=16e3)
-    uncertain_prob.model.add_constraint('CL:ci_lower',upper=0.4953, ref0=1, ref=2)
-    uncertain_prob.model.add_constraint('CL:ci_upper',upper=0.5690, ref0=1, ref=2)
+    uncertain_prob.model.add_constraint('m_fuel:mean', lower=1000.0, upper=50000.0, ref=16000.0)
+    uncertain_prob.model.add_constraint('CL:ci_lower', upper=0.4953, ref0=1, ref=2)
+    uncertain_prob.model.add_constraint('CL:ci_upper', upper=0.5690, ref0=1, ref=2)
 
     #---------------------------------------------------------------------------
     #                      Add Probability-Based Objective
@@ -265,9 +482,9 @@ def main():
     #                  Plot Results and Compare Distributions              
     #---------------------------------------------------------------------------
 
-    # plot_objective(response, optimized)
+    plot_objective(response, optimized)
 
-    # plot_coefficients(response, optimized)
+    plot_coefficients(response, optimized)
     
     # plot_constraints(response, optimized)
 

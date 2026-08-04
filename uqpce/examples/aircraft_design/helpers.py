@@ -1,4 +1,4 @@
-from fixed import *
+from fixed import parameters, tuning
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -37,35 +37,27 @@ def display_initial_guess(prob):
     print('SFC_tech:', prob.get_val('SFC_tech'))
     print('737-800 DOC estimate [$/flight]:', prob.get_val('MDA.DOC_objective.DOC'))
 
-def initialize(prob, params=parameters):
-    prob.set_val('V_cruise', params['V'])
-    prob.set_val('S', params['S'])
-    prob.set_val('AR', params['AR'])
-    prob.set_val('SFC_tech', params['SFC_tech'])
+def initialize(prob, design_params=parameters):
+    prob.set_val('V_cruise', design_params['V_cruise'])
+    prob.set_val('S', design_params['S'])
+    prob.set_val('AR', design_params['AR'])
+    prob.set_val('SFC_tech', design_params['SFC_tech'])
 
     #~~~~~tuning parameters
-    prob.set_val('MDA.Coupled.Aero.e_base', parameters['e_oswald_base'])
-    prob.set_val('MDA.Coupled.Aero.C_D0_base', parameters['CD0_base'])
-    prob.set_val('DOC_objective.Cf_base', parameters['Cf_base'])
-        #fraction of total mass comprising 'systems' and stuff
-    prob.set_val('MDA.Coupled.Weight.fsys_base', tuning['fsys_base'])
-        #wing weight regression/fit tuning parameter
-    prob.set_val('MDA.Coupled.Weight.kw_base', tuning['kw_base'])
-        #off (faster) design velocity wing weight penalty exponent parameter
-    prob.set_val('MDA.Coupled.Weight.p_base', tuning['p_base'])
-        #tuning paramter to change effect SFC_tech has on changing SFC_ref
-    prob.set_val('MDA.Prop.eta_base', tuning['eta_base'])
-        #off design veloicty penalty to increase SFC qudratically about V_ref
-    prob.set_val('MDA.Prop.kv_base', tuning['kv_base'])
-        #strength of increase/decrease of amortized engine cost due to SFC_tech
-    prob.set_val('DOC_objective.beta_base', tuning['beta_base'])
-        #strength of increase/decrease of engine mass due to SFC_tech
-    prob.set_val('MDA.Engine.alpha_base', tuning['alpha_base'])
-        #pretty hard to estimate this. it represents the sensitivty 
-        #of the drag coefficient to changes in planform area linearized 
-        #about S_ref. I have no idea what to put for this, but I chose a 
-        #small value above. Note units are 1/m**2
-    prob.set_val('MDA.Coupled.Aero.ks_base', tuning['ks_base'])
+    prob.set_val('e_base', parameters['e_oswald_base'])
+    prob.set_val('C_D0_base', parameters['CD0_base'])
+    prob.set_val('Cf_base', parameters['Cf_base'])
+    prob.set_val('fsys_base', tuning['fsys_base'])          # fraction of total mass comprising 'systems' and stuff
+    prob.set_val('kw_base', tuning['kw_base'])              # wing weight regression/fit tuning parameter
+    prob.set_val('p_base', tuning['p_base'])                # off (faster) design velocity wing weight penalty exponent parameter
+    prob.set_val('eta_base', tuning['eta_base'])            # tuning paramter to change effect SFC_tech has on changing SFC_ref
+    prob.set_val('kv_base', tuning['kv_base'])              # off design veloicty penalty to increase SFC qudratically about V_ref
+    prob.set_val('beta_base', tuning['beta_base'])          # strength of increase/decrease of amortized engine cost due to SFC_tech
+    prob.set_val('alpha_base', tuning['alpha_base'])        # strength of increase/decrease of engine mass due to SFC_tech
+    prob.set_val('ks_base', tuning['ks_base'])              # pretty hard to estimate this. it represents the sensitivty 
+                                                            # of the drag coefficient to changes in planform area linearized 
+                                                            # about S_ref. I have no idea what to put for this, but I chose a 
+                                                            # small value above. Note units are 1/m**2
 
 def plot_uqpce_pretty(prob):
 

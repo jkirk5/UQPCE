@@ -1,16 +1,13 @@
 import numpy as np
 import openmdao.api as om
-
-from fixed import *
-
-
-from scipy.special import erfinv, erf
-import matplotlib.pyplot as plt
+from fixed import parameters
 
 class AeroComp(om.ExplicitComponent):
-
+    """
+    Component for "AeroComp" box containing analytical derivatives
+    """
     def initialize(self):
-        self.options.declare('vec_size', types=int)
+        self.options.declare('vec_size', default=1, types=int)
 
     def setup(self):
         n = self.options['vec_size']
@@ -18,20 +15,20 @@ class AeroComp(om.ExplicitComponent):
         #proposed design variables
         self.add_input('S',  units="m**2")
         self.add_input('V_cruise', units="m/s")
-        self.add_input('AR', units= "unitless")
+        self.add_input('AR', units="unitless")
        
         #model variable (output from other component)
         self.add_input('m_total',units="kg",shape=(n,))
         
         #uncertain parameters
-        self.add_input('delta_CD0',val=np.ones(n),units=None,shape=(n,))
-        self.add_input('delta_ks',val=np.ones(n),units=None,shape=(n,))
-        self.add_input('delta_e',val=np.ones(n),units=None,shape=(n,))
+        self.add_input('delta_CD0',val=np.ones(n),units="unitless",shape=(n,))
+        self.add_input('delta_ks',val=np.ones(n),units="unitless",shape=(n,))
+        self.add_input('delta_e',val=np.ones(n),units="unitless",shape=(n,))
         
         #tuning parameters
         self.add_input('ks_base', units="1/m**2")
-        self.add_input('e_base', units=None)
-        self.add_input('C_D0_base', units=None)
+        self.add_input('e_base', units="unitless")
+        self.add_input('C_D0_base', units="unitless")
 
         #constant parameters
         self.add_input('g', val=parameters['g'], units="m/s**2" )
@@ -39,9 +36,9 @@ class AeroComp(om.ExplicitComponent):
         self.add_input('S_0', val=parameters['S_naught'], units="m**2" )
     
         #outputs
-        self.add_output('CL',units=None,shape=(n,))
-        self.add_output('CD',units=None,shape=(n,))
-        self.add_output('LD',units=None,shape=(n,))
+        self.add_output('CL',units="unitless",shape=(n,))
+        self.add_output('CD',units="unitless",shape=(n,))
+        self.add_output('LD',units="unitless",shape=(n,))
         self.add_output('WL',units="N/m**2",shape=(n,))
 
     
@@ -93,9 +90,6 @@ class AeroComp(om.ExplicitComponent):
         self.declare_partials(of="WL",wrt="m_total",method="exact", rows=arange, cols=arange)
         self.declare_partials(of="WL",wrt="g",method="exact")
 
-
-    #Sensitivities-end~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
     #passes input member inherited from om.Exp for reading and
     #outputs memeber struct/map thing whatever python calls it for writing
     def compute(self,inputs,outputs):
@@ -108,15 +102,18 @@ class AeroComp(om.ExplicitComponent):
         delta_CD0 = inputs['delta_CD0']
         delta_ks = inputs['delta_ks']
         delta_e = inputs['delta_e']
-
+        m_total = inputs['m_total']
+        V_cruise = inputs['V_cruise']
+        S = inputs['S']
+        AR = inputs['AR']
 
         #do this \/ double equal thingy to reuse output when needed, this synatx pattern might be useful
         #in compute partials function for chain rule stuff
-        outputs['CL'] = CL = (inputs['m_total']*g) / ((1.0/2.0)*rho*(inputs['V_cruise']**2)*inputs['S'])
-        C_D0 = C_D0_base*delta_CD0 + ks_base*delta_ks*(inputs['S']-S_0)     
-        outputs['CD'] = CD = C_D0 + (CL**2) / (np.pi*inputs['AR']*e_base*delta_e)
+        outputs['CL'] = CL = (m_total*g) / ((1.0/2.0)*rho*(V_cruise**2)*S)
+        C_D0 = C_D0_base*delta_CD0 + ks_base*delta_ks*(S-S_0)     
+        outputs['CD'] = CD = C_D0 + (CL**2) / (np.pi*AR*e_base*delta_e)
         outputs['LD'] = CL/CD
-        outputs['WL'] = (inputs['m_total']*g) / inputs['S']
+        outputs['WL'] = (m_total*g) / S
 
     def compute_partials(self, inputs, partials): #I presume inputs and partials are inherited memebers of
         g = inputs['g']
@@ -128,17 +125,21 @@ class AeroComp(om.ExplicitComponent):
         delta_CD0 = inputs['delta_CD0']
         delta_ks = inputs['delta_ks']
         delta_e = inputs['delta_e']
+        m_total = inputs['m_total']
+        V_cruise = inputs['V_cruise']
+        S = inputs['S']
+        AR = inputs['AR']
 
-        CL = (inputs['m_total']*g) / ((1.0/2.0)*rho*(inputs['V_cruise']**2)*inputs['S'])         
-        C_D0 = C_D0_base*delta_CD0 + ks_base*delta_ks*(inputs['S']-S_0) 
-        CD = C_D0 + (CL**2) / (np.pi*inputs['AR']*e_base*delta_e)
+        CL = (m_total*g) / ((1.0/2.0)*rho*(V_cruise**2)*S)         
+        C_D0 = C_D0_base*delta_CD0 + ks_base*delta_ks*(S-S_0) 
+        CD = C_D0 + (CL**2) / (np.pi*AR*e_base*delta_e)
                                                   
-        partials['CL','V_cruise'] = dCLdV = -2*CL*(1.0/inputs['V_cruise'])
-        partials['CL','S'] = dCLdS = -1*CL*(1.0/inputs['S'])
+        partials['CL','V_cruise'] = dCLdV = -2*CL*(1.0/V_cruise)
+        partials['CL','S'] = dCLdS = -1*CL*(1.0/S)
         #partials['CL','AR'] = dCLdAR = 0 #fixed to assume S and AR as independent. span is always 
         #computed from these inputs
         dCLdAR = 0
-        partials['CL','m_total'] = dCLdm = CL/inputs['m_total']
+        partials['CL','m_total'] = dCLdm = CL/m_total
         partials['CL','rho'] = dCLdrho = -CL/rho
         partials['CL','g'] = dCLdg = CL/g
     
@@ -163,12 +164,12 @@ class AeroComp(om.ExplicitComponent):
 
 
         #product rule/quotient rule or whatever u wanna call it helpers
-        product_rule_V = 2*CL*dCLdV*(1/inputs['AR']) #+ (CL**2)*(0)
-        product_rule_S = 2*CL*dCLdS*(1/inputs['AR']) - (CL**2)*(1.0/(inputs['AR']**2))*dARdS
-        product_rule_AR = 2*CL*dCLdAR*(1/inputs['AR']) - (CL**2)*(1.0/(inputs['AR']**2))*(1.0)
-        product_rule_m = 2*CL*dCLdm*(1/inputs['AR'])
-        product_rule_rho = 2*CL*dCLdrho*(1/inputs['AR'])
-        product_rule_g = 2*CL*dCLdg*(1/inputs['AR'])
+        product_rule_V = 2*CL*dCLdV*(1/AR) #+ (CL**2)*(0)
+        product_rule_S = 2*CL*dCLdS*(1/AR) - (CL**2)*(1.0/(AR**2))*dARdS
+        product_rule_AR = 2*CL*dCLdAR*(1/AR) - (CL**2)*(1.0/(AR**2))*(1.0)
+        product_rule_m = 2*CL*dCLdm*(1/AR)
+        product_rule_rho = 2*CL*dCLdrho*(1/AR)
+        product_rule_g = 2*CL*dCLdg*(1/AR)
         
         partials['CD','V_cruise'] = dCDdV = dCD_0dV + (1/(np.pi*e_base*delta_e))*(product_rule_V)
         partials['CD','S'] = dCDdS =  dCD_0dS + (1/(np.pi*e_base*delta_e))*(product_rule_S)
@@ -179,11 +180,11 @@ class AeroComp(om.ExplicitComponent):
 
         partials['CD','C_D0_base'] = dCDdCD0base =  dCD_0dCDbase 
         partials['CD','S_0'] = dCDdS0 =  dCD_0dS0 
-        partials['CD','e_base'] = dCDdebase =  dCD_0debase - ((CL**2)/(np.pi*e_base*e_base*delta_e*inputs['AR']))
+        partials['CD','e_base'] = dCDdebase =  dCD_0debase - ((CL**2)/(np.pi*e_base*e_base*delta_e*AR))
         partials['CD','delta_CD0'] = dCDddeltaCD0 =  dCD_0ddeltaCD0 
-        partials['CD','delta_e'] = dCDddeltae =  dCD_0ddeltae - ((CL**2)/(np.pi*e_base*delta_e*delta_e*inputs['AR']))
-        partials['CD','ks_base'] = dCDdks_base = delta_ks*(inputs['S']-S_0)
-        partials['CD','delta_ks'] = dCDddelta_ks =  ks_base*(inputs['S']-S_0)
+        partials['CD','delta_e'] = dCDddeltae =  dCD_0ddeltae - ((CL**2)/(np.pi*e_base*delta_e*delta_e*AR))
+        partials['CD','ks_base'] = dCDdks_base = delta_ks*(S-S_0)
+        partials['CD','delta_ks'] = dCDddelta_ks =  ks_base*(S-S_0)
 
         partials['LD','V_cruise'] = (CD*dCLdV - CL*dCDdV)/(CD**2) 
         partials['LD','S'] = (CD*dCLdS - CL*dCDdS)/(CD**2)

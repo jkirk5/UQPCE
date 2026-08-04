@@ -1,11 +1,13 @@
 import openmdao.api as om
 import numpy as np
 from fixed import parameters
-#hi
-class BreguetRangeComp(om.ExplicitComponent):
 
+class BreguetRangeComp(om.ExplicitComponent):
+    """
+    Component for "BreguetRangeComp" box containing analytical derivatives
+    """
     def initialize(self):
-        self.options.declare('vec_size', types=int)
+        self.options.declare('vec_size', default=1, types=int)
 
     def setup(self):
         n = self.options['vec_size']
@@ -14,7 +16,7 @@ class BreguetRangeComp(om.ExplicitComponent):
 
         self.add_input('SFC',units='1/s',
                        shape=(n,)) #vector inputs
-        self.add_input('LD',units=None,
+        self.add_input('LD',units="unitless",
                         shape=(n,))
         self.add_input('m_total', units='kg',
                        shape=(n,))

@@ -2,12 +2,12 @@ import openmdao.api as om
 import numpy as np
 from fixed import parameters
 
-class Propulsion(om.ExplicitComponent):
+class PropulsionComp(om.ExplicitComponent):
     """
     Component for "PropulsionComp" box containing analytical derivatives
     """
     def initialize(self):
-        self.options.declare('vec_size', types=int)
+        self.options.declare('vec_size', default=1, types=int)
 
     def setup(self):
         n = self.options['vec_size']
@@ -15,18 +15,18 @@ class Propulsion(om.ExplicitComponent):
         #Parameters
         
         #proposed design variables
-        self.add_input('SFC_tech', units=None)
+        self.add_input('SFC_tech', units="unitless")
         self.add_input('V_cruise', units='m/s')
 
         #model variable (output from other component)
 
         #uncertain parameters
-        self.add_input('delta_eta', val=np.ones(n), units=None, shape=(n,))
-        self.add_input('delta_kv', val=np.ones(n), units=None, shape=(n,))
+        self.add_input('delta_eta', val=np.ones(n), units="unitless", shape=(n,))
+        self.add_input('delta_kv', val=np.ones(n), units="unitless", shape=(n,))
         
         #tuning parameters
-        self.add_input('eta_base',units=None)
-        self.add_input('kv_base',units=None)
+        self.add_input('eta_base', units="unitless")
+        self.add_input('kv_base', units="unitless")
 
         #constant parameters
         self.add_input('SFC_ref', val=parameters['SFC_ref'], units='1/s')
@@ -51,11 +51,11 @@ class Propulsion(om.ExplicitComponent):
         kv_base = inputs['kv_base']
         V_ref = inputs['V_ref']
         SFC_tech = inputs['SFC_tech']
-        V = inputs['V_cruise']
+        V_cruise = inputs['V_cruise']
         delta_eta = inputs['delta_eta']
         delta_kv = inputs['delta_kv']
         
-        outputs['SFC'] = SFC_ref * (1 - eta_base * delta_eta * SFC_tech) * (1 + kv_base * delta_kv * (V/V_ref - 1)**2)
+        outputs['SFC'] = SFC_ref * (1 - eta_base * delta_eta * SFC_tech) * (1 + kv_base * delta_kv * (V_cruise/V_ref - 1)**2)
     
     def compute_partials(self, inputs, partials):
         SFC_ref = inputs['SFC_ref']
@@ -63,20 +63,17 @@ class Propulsion(om.ExplicitComponent):
         kv_base = inputs['kv_base']
         V_ref = inputs['V_ref']
         SFC_tech = inputs['SFC_tech']
-        V = inputs['V_cruise']
+        V_cruise = inputs['V_cruise']
         delta_eta = inputs['delta_eta']
         delta_kv = inputs['delta_kv']
         
-        partials['SFC', 'SFC_tech'] = SFC_ref * (-eta_base * delta_eta) * (1 + kv_base * delta_kv * (V/V_ref - 1)**2)
-        partials['SFC', 'V_cruise'] = (2 / V_ref) * (SFC_ref * (1 - eta_base * delta_eta * SFC_tech) * (kv_base * delta_kv * (V/V_ref - 1)))
+        partials['SFC', 'SFC_tech'] = SFC_ref * (-eta_base * delta_eta) * (1 + kv_base * delta_kv * (V_cruise/V_ref - 1)**2)
+        partials['SFC', 'V_cruise'] = (2 / V_ref) * (SFC_ref * (1 - eta_base * delta_eta * SFC_tech) * (kv_base * delta_kv * (V_cruise/V_ref - 1)))
         
-        partials['SFC', 'SFC_ref'] = (1 - eta_base * delta_eta * SFC_tech) * (1 + kv_base * delta_kv * (V/V_ref - 1)**2)
-        partials['SFC', 'eta_base'] = SFC_ref * (-delta_eta * SFC_tech) * (1 + kv_base * delta_kv * (V/V_ref - 1)**2)
-        partials['SFC', 'kv_base'] = SFC_ref * (1 - eta_base * delta_eta * SFC_tech) * (delta_kv * (V/V_ref - 1)**2)
-        partials['SFC', 'V_ref'] = (-2 * V / V_ref**2) * (SFC_ref * (1 - eta_base * delta_eta * SFC_tech) * (kv_base * delta_kv * (V/V_ref - 1)))
+        partials['SFC', 'SFC_ref'] = (1 - eta_base * delta_eta * SFC_tech) * (1 + kv_base * delta_kv * (V_cruise/V_ref - 1)**2)
+        partials['SFC', 'eta_base'] = SFC_ref * (-delta_eta * SFC_tech) * (1 + kv_base * delta_kv * (V_cruise/V_ref - 1)**2)
+        partials['SFC', 'kv_base'] = SFC_ref * (1 - eta_base * delta_eta * SFC_tech) * (delta_kv * (V_cruise/V_ref - 1)**2)
+        partials['SFC', 'V_ref'] = (-2 * V_cruise / V_ref**2) * (SFC_ref * (1 - eta_base * delta_eta * SFC_tech) * (kv_base * delta_kv * (V_cruise/V_ref - 1)))
 
-        partials['SFC', 'delta_eta'] = SFC_ref * (-eta_base * SFC_tech) * (1 + kv_base * delta_kv * (V/V_ref - 1)**2)
-        partials['SFC', 'delta_kv'] = SFC_ref * (1 - eta_base * delta_eta * SFC_tech) * (kv_base * (V/V_ref - 1)**2)
-
-
-
+        partials['SFC', 'delta_eta'] = SFC_ref * (-eta_base * SFC_tech) * (1 + kv_base * delta_kv * (V_cruise/V_ref - 1)**2)
+        partials['SFC', 'delta_kv'] = SFC_ref * (1 - eta_base * delta_eta * SFC_tech) * (kv_base * (V_cruise/V_ref - 1)**2)

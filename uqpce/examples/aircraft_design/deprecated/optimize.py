@@ -3,8 +3,10 @@ from disciplines.objective import *
 from disciplines.BreguetRange import *
 from disciplines.aero import *
 from disciplines.total_mass_comp import *
-from disciplines.propAndCost import *
+from disciplines.propulsion import *
 from disciplines.weight import *
+from disciplines.doc import DOC
+from disciplines.dpm import Dpm
 from fixed import parameters
 from helpers import *
 
@@ -20,15 +22,15 @@ class CoupledGroup(om.Group):
         self.set_input_defaults('V', val=235.0)       # m/s
         self.set_input_defaults('SFC_tech', val=0.0)  # baseline technology
 
-        self.add_subsystem('Prop', Propulsion(vec_size=1), promotes_inputs=['V', 'SFC_tech'])
+        self.add_subsystem('Prop', PropulsionComp(vec_size=1), promotes_inputs=['V', 'SFC_tech'])
 
-        self.add_subsystem('Engine', EngineWeight(vec_size=1), promotes_inputs=['SFC_tech'])
+        self.add_subsystem('Engine', EngineWeightComp(vec_size=1), promotes_inputs=['SFC_tech'])
         
         #^^add at problem level
 
-        self.add_subsystem('Aero', AeroDiscipline(vec_size=1), promotes_inputs=['S', 'AR', 'V'])
+        self.add_subsystem('Aero', AeroComp(vec_size=1), promotes_inputs=['S', 'AR', 'V'])
         
-        self.add_subsystem('Weight', Weights_Struct(vec_size=1), promotes_inputs=['S', 'AR', 'V'])
+        self.add_subsystem('Weight', WeightsComp(vec_size=1), promotes_inputs=['S', 'AR', 'V'])
         
         self.add_subsystem('Mass', TotalMassComp(vec_size=1))
         
@@ -118,7 +120,7 @@ def original_main_script():
 
     # Initial design point
     
-    initialize_og(prob)
+    initialize(prob)
 
     #determining tuning parameters 
 

@@ -3,7 +3,9 @@ import numpy as np
 from fixed import parameters
 
 class Dpm(om.ExplicitComponent):
-
+    """
+    Component for normalized DOC containing analytical derivatives
+    """
     def initialize(self):
         self.options.declare('vec_size', default=1, types=int)
 
@@ -15,7 +17,7 @@ class Dpm(om.ExplicitComponent):
 
         #model variable (output from other component)
         self.add_input('DOC', units='USD', shape=(n,))
-        self.add_input('R', units='km',shape=(n,))
+        self.add_input('R', units='km', shape=(n,))
 
         #uncertain parameters
         #n/a
@@ -24,7 +26,7 @@ class Dpm(om.ExplicitComponent):
         #n/a
 
         #constant parameters
-        self.add_input('N_pax', val=parameters['N_pax'])
+        self.add_input('N_pax', val=parameters['N_pax'], units='unitless')
 
         #outputs
         self.add_output('Dpm', shape=(n,))

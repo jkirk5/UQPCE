@@ -26,6 +26,6 @@ Settings:
     order: 2
     backend: Agg
     conv_threshold_percent: 0.000005
-    aleat_samp_size: 50000
+    aleat_samp_size: 25000
     track_convergence_off: True
     significance: 0.05

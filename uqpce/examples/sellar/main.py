@@ -358,9 +358,9 @@ if __name__ == '__main__':
     #---------------------------------------------------------------------------
     
     # Set up driver
-    prob.driver = om.pyOptSparseDriver(optimizer='SLSQP')
-    #prob.driver.opt_settings['Major feasibility tolerance'] = 1e-8
-    #prob.driver.opt_settings['Iterations limit'] = 50
+    prob.driver = om.pyOptSparseDriver(optimizer='SNOPT')
+    prob.driver.opt_settings['Major feasibility tolerance'] = 1e-8
+    prob.driver.opt_settings['Iterations limit'] = 50
 
     # Initial guesses
     prob.model.set_input_defaults('x', -5)
