@@ -22,7 +22,7 @@ class BreguetRangeComp(om.JaxExplicitComponent):
     def setup(self):
         n = self.options["vec_size"]
 
-        self.add_input("V", val=parameters["V_ref"], units="m/s")
+        self.add_input("V_cruise", val=parameters["V_ref"], units="m/s")
         self.add_input("SFC", val=parameters["SFC_ref"], shape=(n,), units="1/s")
         self.add_input("LD", val=16.0, shape=(n,))
 
@@ -31,5 +31,5 @@ class BreguetRangeComp(om.JaxExplicitComponent):
 
         self.add_output("R", val=1.0e6, shape=(n,), units="m")
 
-    def compute_primal(self, V, SFC, LD, m_total, m_fuel):
-        return ((V / SFC) * LD * jnp.log(m_total / (m_total - m_fuel)))
+    def compute_primal(self, V_cruise, SFC, LD, m_total, m_fuel):
+        return ((V_cruise / SFC) * LD * jnp.log(m_total / (m_total - m_fuel)))

@@ -1,10 +1,10 @@
 import openmdao.api as om
 import jax.numpy as jnp
 
-from fixed import parameters
+from fixed import parameters, tuning
 
 
-class Weights_Struct(om.JaxExplicitComponent):
+class WeightsComp(om.JaxExplicitComponent):
     """
     Evaluates the weights & structures for a coupled Breguet range with MDAO & JAX
     
@@ -25,19 +25,19 @@ class Weights_Struct(om.JaxExplicitComponent):
         n = self.options["vec_size"]
 
         self.add_input("S", val=parameters["S_naught"], units="m**2")
-        self.add_input("AR", val=parameters["b"] ** 2 / parameters["S_naught"])
-        self.add_input("V", val=parameters["V_ref"], units="m/s")
+        self.add_input("AR", val=parameters["b"] ** 2 / parameters["S_naught"], units="unitless")
+        self.add_input("V_cruise", val=parameters["V_ref"], units="m/s")
 
         self.add_input("m_total", val=50000.0, shape=(n,), units="kg")
         self.add_input("m_engine", val=parameters["m_eng_ref"], shape=(n,), units="kg")
 
-        self.add_input("delta_kw", val=1.0, shape=(n,))
-        self.add_input("delta_fsys", val=1.0, shape=(n,))
-        self.add_input("delta_p", val=1.0, shape=(n,))
+        self.add_input("delta_kw", val=1.0, shape=(n,), units="unitless")
+        self.add_input("delta_fsys", val=1.0, shape=(n,), units="unitless")
+        self.add_input("delta_p", val=1.0, shape=(n,), units="unitless")
 
-        self.add_input("kw_base", val=parameters["kw_base"])
-        self.add_input("fsys_base", val=parameters["fsys_base"])
-        self.add_input("p_base", val=parameters["p_base"])
+        self.add_input("kw_base", val=tuning["kw_base"], units="unitless")
+        self.add_input("fsys_base", val=tuning["fsys_base"], units="unitless")
+        self.add_input("p_base", val=tuning["p_base"], units="unitless")
         self.add_input("V_ref", val=parameters["V_ref"], units="m/s")
         self.add_input("m_fuse", val=parameters["m_fuse"], units="kg")
 
@@ -48,7 +48,7 @@ class Weights_Struct(om.JaxExplicitComponent):
         self,
         S,
         AR,
-        V,
+        V_cruise,
         m_total,
         m_engine,
         delta_kw,
@@ -60,7 +60,7 @@ class Weights_Struct(om.JaxExplicitComponent):
         V_ref,
         m_fuse):
         
-        m_wing = (kw_base * delta_kw * S**0.758 * AR**0.6 * m_total**0.006 * (V / V_ref) ** (p_base * delta_p))
+        m_wing = (kw_base * delta_kw * S**0.758 * AR**0.6 * m_total**0.006 * (V_cruise / V_ref) ** (p_base * delta_p))
 
         m_empty = (m_wing + m_fuse + fsys_base * m_total * delta_fsys + m_engine)
 
