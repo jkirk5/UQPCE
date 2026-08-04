@@ -217,9 +217,9 @@ def main():
     #                             Add Constraints
     #---------------------------------------------------------------------------
 
-    uncertain_prob.model.add_constraint('m_fuel:mean', lower=1000.0, upper=50000.0, ref=16000.0)
-    uncertain_prob.model.add_constraint('CL:ci_lower', upper=0.4953, ref0=1, ref=2)
-    uncertain_prob.model.add_constraint('CL:ci_upper', upper=0.5690, ref0=1, ref=2)
+    uncertain_prob.model.add_constraint('m_fuel:mean', lower=1e3, upper=5e4, ref=16e3)
+    uncertain_prob.model.add_constraint('CL:ci_lower',upper=0.4953, ref0=1, ref=2)
+    uncertain_prob.model.add_constraint('CL:ci_upper',upper=0.5690, ref0=1, ref=2)
 
     #---------------------------------------------------------------------------
     #                      Add Probability-Based Objective

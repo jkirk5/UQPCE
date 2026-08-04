@@ -55,9 +55,44 @@ class CoupledDisciplines(om.Group):
                              'SFC',
                              'm_fuel'],
             promotes_outputs=['R']
-        )
+                           )
+        #^######################################################^#
 
-        # Range Residual
+        ###Structural Weight Component############################
+        self.add_subsystem(
+            'Weight',Weights_Struct(vec_size=n),
+            promotes_inputs=['S','AR','V_cruise',
+            'delta_kw','delta_fsys','delta_p',
+            'm_total','m_engine'],
+            promotes_outputs=['m_wing','m_empty']
+                           )
+        #^######################################################^#
+
+        ###Aerodynamics Component#################################
+        #self.add_subsystem(
+        #    'Aero',AeroCompJax(vec_size=n),
+        #    promotes_inputs=['S','AR','V_cruise',
+        #    'delta_CD0','delta_ks','delta_e',
+        #    'm_total'], 
+        #    promotes_outputs=['CL','CD','LD','WL']
+        #                   )
+        #^######################################################^#
+
+        #~~~ Temporary Julia Aero Comp ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        jl.include(os.path.abspath(r"C:\Users\lkohler\Projects\MDAO\UQPCE\uqpce\examples\aircraft_design\disciplines\Julia\aero.jl"))
+        jl_aero_comp = jl.AeroCompJulia.get_aero_comp(n)
+        AeroCompJulia = JuliaExplicitComp(jlcomp=jl_aero_comp)
+        self.add_subsystem(
+                    'Aero',AeroCompJulia,
+                    promotes_inputs=['S','AR','V_cruise',
+                    'delta_CD0','delta_ks','delta_e',
+                    'm_total'], 
+                    promotes_outputs=['CL','CD','LD','WL']
+                                   )
+        #~~~ Temporary Julia Aero Comp ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        ###Range Residual#########################################
+        initial_guess = np.ones(n)*16000 #kg
         Balance = om.BalanceComp()
         
         Balance.add_balance(
