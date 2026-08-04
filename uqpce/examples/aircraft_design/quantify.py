@@ -265,9 +265,9 @@ def main():
     #                  Plot Results and Compare Distributions              
     #---------------------------------------------------------------------------
 
-    # plot_objective(response, optimized)
+    plot_objective(response, optimized)
 
-    # plot_coefficients(response, optimized)
+    plot_coefficients(response, optimized)
     
     # plot_constraints(response, optimized)
 
