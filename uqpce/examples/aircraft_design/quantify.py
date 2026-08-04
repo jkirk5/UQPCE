@@ -241,7 +241,7 @@ def main():
 
     uncertain_prob.setup()
     
-    uncertain_prob.model.set_val('lambda', 3)
+    uncertain_prob.model.set_val('lambda', 1)
     
     initialize(uncertain_prob, params=optimal)
     

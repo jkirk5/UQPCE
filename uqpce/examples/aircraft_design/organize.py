@@ -88,7 +88,7 @@ class CoupledDisciplines(om.Group):
         
         Balance.add_balance(
             name='m_fuel', val=np.ones(n)*16000,
-            units='kg', lower=1000.0, upper=50000.0,
+            units='kg', lower=1000.0, upper=500000.0,
             lhs_name='R', rhs_name='R_target',
             rhs_val=parameters['R_target'],
             eq_units='m', ref=16000.0, res_ref=1.0e6,
@@ -104,7 +104,7 @@ class CoupledDisciplines(om.Group):
         newton = self.nonlinear_solver = om.NewtonSolver(solve_subsystems=True)
         self.nonlinear_solver.options['iprint'] = 2
         self.nonlinear_solver.options['maxiter'] = 500
-        self.nonlinear_solver.options['atol'] = 1e-8
+        self.nonlinear_solver.options['atol'] = 1e-5
         self.nonlinear_solver.options['rtol'] = 1e-8
 
         line_search = newton.linesearch = om.ArmijoGoldsteinLS(bound_enforcement='vector')
