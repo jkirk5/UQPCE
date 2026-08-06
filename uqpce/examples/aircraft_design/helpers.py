@@ -762,10 +762,10 @@ def plot_pareto(uncertain_prob, optimal):
 
         uncertain_prob.model.set_val('lambda', lambd_val)
 
-        uncertain_prob.model.set_val('S', optimal["S"])
-        uncertain_prob.model.set_val('V_cruise', optimal["V_cruise"])
-        uncertain_prob.model.set_val('AR', optimal["AR"])
-        uncertain_prob.model.set_val('SFC_tech', optimal["SFC_tech"])
+        #uncertain_prob.model.set_val('S', optimal["S"])
+        #uncertain_prob.model.set_val('V_cruise', optimal["V_cruise"])
+        #uncertain_prob.model.set_val('AR', optimal["AR"])
+        #uncertain_prob.model.set_val('SFC_tech', optimal["SFC_tech"])
 
         
         uncertain_prob.run_driver()
