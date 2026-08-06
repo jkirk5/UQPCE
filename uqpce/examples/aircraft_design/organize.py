@@ -58,15 +58,22 @@ class CoupledDisciplines(om.Group):
                            )
 
         # Range Residual
-        initial_guess = np.ones(n)*16000 #kg
+        initial_guess = np.ones(n)*20000 #kg
         Balance = om.BalanceComp()
         
         Balance.add_balance(
-            name='m_fuel', val=np.ones(n)*16000,
-            units='kg', lower=1000.0, upper=90000.0,
-            lhs_name='R', rhs_name='R_target',
+            name='m_fuel',
+            val=initial_guess,
+            units='kg',
+            lower=1000.0,
+            upper=100000.0,
+            lhs_name='R',
+            rhs_name='R_target',
             rhs_val=parameters['R_target'],
-            eq_units='m', ref=16000.0, res_ref=5.5e9,
+            eq_units='m',
+            normalize=True,
+            ref=20000.0,
+            res_ref=1.0,
         )
         
         self.add_subsystem(
@@ -79,12 +86,12 @@ class CoupledDisciplines(om.Group):
         newton = self.nonlinear_solver = om.NewtonSolver(solve_subsystems=True)
         self.nonlinear_solver.options['iprint'] = 2
         self.nonlinear_solver.options['maxiter'] = 500
-        self.nonlinear_solver.options['atol'] = 1e-10
-        self.nonlinear_solver.options['rtol'] = 1e-12
+        self.nonlinear_solver.options['atol'] = 1e-8
+        self.nonlinear_solver.options['rtol'] = 1e-9
         newton.options['err_on_non_converge'] = True
 
 
-        line_search = newton.linesearch = om.ArmijoGoldsteinLS(bound_enforcement='vector')
+        line_search = newton.linesearch = om.ArmijoGoldsteinLS(bound_enforcement='scalar')
         line_search.options['maxiter'] = 20
         line_search.options['print_bound_enforce'] = True
         self.linear_solver = om.DirectSolver()

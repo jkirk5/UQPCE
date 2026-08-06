@@ -13,7 +13,7 @@ def deterministic_optimization(prob):
     prob.driver = om.ScipyOptimizeDriver()
     prob.driver.options['optimizer'] = 'SLSQP'
     prob.driver.options['maxiter'] = 1000
-    prob.driver.options['tol'] = 1e-9
+    prob.driver.options['tol'] = 1e-6
     prob.driver.options['disp'] = True
 
     # Declare Design variables
@@ -175,7 +175,7 @@ def main():
     uncertain_prob.driver = om.ScipyOptimizeDriver()
     uncertain_prob.driver.options['optimizer'] = 'SLSQP'
     uncertain_prob.driver.options['maxiter'] = 1000
-    uncertain_prob.driver.options['tol'] = 1e-9
+    uncertain_prob.driver.options['tol'] = 1e-6
     uncertain_prob.driver.options['disp'] = True
 
     #---------------------------------------------------------------------------

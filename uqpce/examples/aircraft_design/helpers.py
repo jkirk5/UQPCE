@@ -738,11 +738,11 @@ def plot_pareto(uncertain_prob, optimal):
 
     #n = np.linspace(0,20,5) #exponent
 
-    thet = np.linspace(0,np.pi/2.0,15)
+    thet = np.linspace(0,np.pi/2.0,10)
 
     lambd_end = 1.25
 
-    lambd = ((lambd_end/1.0) - (lambd_end/1.0)*np.cos(thet)) + 0.01
+    lambd = ((lambd_end/1.0) - (lambd_end/1.0)*np.cos(thet))
 
     #lambd = (1.05**n) - 1.0
 
@@ -804,7 +804,7 @@ def plot_pareto(uncertain_prob, optimal):
     AR_normalized = (AR_arr - 7.0)/43.0
     SFC_normalized = (SFC_arr + 1.0)/2.0
 
-    width = min_delta/6.0
+    width = min_delta
 
     design_ax.bar(lambd,S_normalized, width, label="S")
     design_ax.bar(lambd,SFC_normalized, width, label="SFC")
