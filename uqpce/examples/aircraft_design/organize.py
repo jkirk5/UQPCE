@@ -85,9 +85,9 @@ class CoupledDisciplines(om.Group):
         # Residual Solver Options
         newton = self.nonlinear_solver = om.NewtonSolver(solve_subsystems=True)
         self.nonlinear_solver.options['iprint'] = 2
-        self.nonlinear_solver.options['maxiter'] = 500
+        self.nonlinear_solver.options['maxiter'] = 700
         self.nonlinear_solver.options['atol'] = 1e-8
-        self.nonlinear_solver.options['rtol'] = 1e-9
+        self.nonlinear_solver.options['rtol'] = 2e-9
         newton.options['err_on_non_converge'] = True
 
 

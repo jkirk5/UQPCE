@@ -295,7 +295,7 @@ def plot_objective(dict_response, dict_optimized):
         fontsize=28
     )
   
-    ax[0].hist(DOC_dist,bins=100,density=True,color='red',alpha=0.5,label="response at deterministic optima")
+    ax[0].hist(DOC_dist,bins=70,density=True,color='red',alpha=0.5,label="response at deterministic optima")
     
     ax[0].axvline(DOC_ci_lower, color='red', linewidth=2,linestyle=':', 
                label=rf"CI lower $\approx$ {DOC_ci_lower:.4f}")
@@ -304,7 +304,7 @@ def plot_objective(dict_response, dict_optimized):
     ax[0].axvline(DOC_mu, color='red', linewidth=2,linestyle='-', 
                label=rf"$\mu_{{\mathrm{{resp}}}} \ \approx$ {DOC_mu:.4f}")
  
-    ax[0].hist(DOC_opt_dist,bins=100,density=True,color='blue',alpha=0.5,label="optimized probability distribution")
+    ax[0].hist(DOC_opt_dist,bins=70,density=True,color='blue',alpha=0.5,label="optimized probability distribution")
     
     ax[0].axvline(DOC_opt_ci_lower, color='blue', linewidth=2,linestyle=':', 
                label=rf"CI lower $\approx$ {DOC_opt_ci_lower:.4f}")
@@ -318,7 +318,7 @@ def plot_objective(dict_response, dict_optimized):
     ax[0].set_title(rf"DOC Distribution: $\sigma^2_{{\mathrm{{resp}}}} = {DOC_variance:.4e}, \ \ \sigma^2_{{\mathrm{{opt}}}} = {DOC_opt_variance:.4e}$",fontsize=24)
     ax[0].legend()
 
-    ax[1].hist(Dpm_dist,bins=100,density=True,color='red',alpha=0.5,label="response at deterministic optima")
+    ax[1].hist(Dpm_dist,bins=70,density=True,color='red',alpha=0.5,label="response at deterministic optima")
     
     ax[1].axvline(Dpm_ci_lower, color='red', linewidth=2,linestyle=':', 
                label=rf"CI lower $\approx$ {Dpm_ci_lower:.4f}")
@@ -327,7 +327,7 @@ def plot_objective(dict_response, dict_optimized):
     ax[1].axvline(Dpm_mu, color='red', linewidth=2,linestyle='-', 
                label=rf"$\mu_{{\mathrm{{resp}}}} \ \approx$ {Dpm_mu:.4f}")
  
-    ax[1].hist(Dpm_opt_dist,bins=100,density=True,color='blue',alpha=0.5,label="optimized probability distribution")
+    ax[1].hist(Dpm_opt_dist,bins=70,density=True,color='blue',alpha=0.5,label="optimized probability distribution")
     
     ax[1].axvline(Dpm_opt_ci_lower, color='blue', linewidth=2,linestyle=':', 
                label=rf"CI lower $\approx$ {Dpm_opt_ci_lower:.4f}")
@@ -342,7 +342,7 @@ def plot_objective(dict_response, dict_optimized):
     ax[1].legend()
 
 
-    #plt.show()
+    plt.show()
 
 def plot_coefficients(dict_response, dict_optimized):
 
@@ -730,19 +730,24 @@ def plot_sfc(dict_response, dict_optimized):
 
 def plot_pareto(uncertain_prob, optimal):
 
-    fig, axes = plt.subplots(2,1)
+    plt.rcParams.update({
+        "text.usetex" : True,
+        "font.family" : "serif"
+    })
 
-    var_ax = axes[0]
+    fig, axes = plt.subplots()
 
-    design_ax = axes[1]
+    var_ax = axes
+
+    #ax_des = axes[1]
 
     #n = np.linspace(0,20,5) #exponent
 
-    thet = np.linspace(0,np.pi/2.0,10)
+    thet = np.linspace(0,np.pi/2.0,25)
 
-    lambd_end = 1.25
+    lambd_end = 1.3
 
-    lambd = ((lambd_end/1.0) - (lambd_end/1.0)*np.cos(thet))
+    lambd = ((lambd_end) - (lambd_end)*np.cos(thet))
 
     #lambd = (1.05**n) - 1.0
 
@@ -757,6 +762,10 @@ def plot_pareto(uncertain_prob, optimal):
     Design_V_list = []
     Design_AR_list = []
     Design_SFC_list = []
+
+    title_str = r"Pareto Front: $J = \frac{\mu}{\mu_{\mathrm{resp}}} + \lambda \frac{\sigma^2}{\sigma^2_{\mathrm{resp}}}$"
+    fig.suptitle(title_str,fontsize=36)
+    fig.supxlabel(r"$\lambda$",fontsize=24)
 
     for lambd_val in lambd:
 
@@ -792,7 +801,16 @@ def plot_pareto(uncertain_prob, optimal):
     mean_line, = var_ax_mean.plot(lambd,np.asarray(DOC_mu_list),color="red",marker="o",label="mean")
     var_ax_mean.legend(handles=[variance_line,mean_line])
 
-    var_ax.set_title("Pareto plot")
+
+
+    var_ax.set_ylabel(r"$\sigma^2 \ [\mathrm{USD}^2]$",fontsize=24)
+    var_ax.tick_params(color="blue",axis='y',size=20)
+    var_ax_mean.set_ylabel(r"$\mu \ [\mathrm{USD}]$",fontsize=24)
+    var_ax_mean.tick_params(color="red",axis='y',size=20)
+
+
+    fig_des, ax_des = plt.subplots(4,1)
+
 
     S_arr = np.asarray(Design_S_list)
     V_arr = np.asarray(Design_V_list)
@@ -806,21 +824,38 @@ def plot_pareto(uncertain_prob, optimal):
 
     width = min_delta
 
-    design_ax.bar(lambd,S_normalized, width, label="S")
-    design_ax.bar(lambd,SFC_normalized, width, label="SFC")
-    design_ax.bar(lambd,V_normalized, width,label="V")
-    design_ax.bar(lambd,AR_normalized, width, label="AR")
+    #ax_des[0].bar(lambd,S_arr, width, color="red")
+    ax_des[0].plot(lambd,S_arr, color="red", marker="o")
+    ax_des[0].set_ylabel(r"$S \ [\mathrm{m}^2]$",fontsize=24)
+
+    #ax_des[1].bar(lambd,SFC_arr, width,color="green")
+    ax_des[1].plot(lambd,SFC_arr, color="green", marker="o")
+    ax_des[1].set_ylabel(r"$\mathrm{SFC}_{\mathrm{tech}}$",fontsize=24)
+    
+    #ax_des[2].bar(lambd,V_arr, width, color="blue")
+    ax_des[2].plot(lambd,V_arr, color="blue", marker="o")
+    ax_des[2].set_ylabel(r"$V_{\mathrm{cruise}} \ [\frac{\mathrm{m}}{\mathrm{s}}]$",fontsize=24)
+
+    #ax_des[3].bar(lambd,AR_arr, width, color="orange")
+    ax_des[3].plot(lambd,AR_arr,  color="orange", marker="o")
+    ax_des[3].set_ylabel(r"$\mathrm{AR}$",fontsize=24)
+
+    fig_des.suptitle(title_str,fontsize=36)
+    fig_des.supxlabel(r"$\lambda$",fontsize=24)
    
-    design_ax.legend()
+    #ax_des.legend()
 
 
     fig2, ax2 = plt.subplots()
-
+    lambda_scatter = ax2.scatter(np.asarray(DOC_var_list),np.asarray(DOC_mu_list), c=lambd, marker="*", s=60, cmap="jet")
     ax2.plot(np.asarray(DOC_var_list),np.asarray(DOC_mu_list),color="black")
-    lambda_scatter = ax2.scatter(np.asarray(DOC_var_list),np.asarray(DOC_mu_list), c=lambd, marker="*", s=60)
-    plt.colorbar(lambda_scatter, label="lambda", cmap="plasma")
+    
+    cbar = plt.colorbar(lambda_scatter, label="lambda")
+    cbar.set_label(r"$\lambda$",fontsize=24)
+    ax2.set_xlabel(r"$\sigma^2 \ [\mathrm{USD}^2]$",fontsize=24)
+    ax2.set_ylabel(r"$\mu \  [\mathrm{USD}]$",fontsize=24)
 
-    ax2.set_title("Pareto")
+    ax2.set_title(title_str,fontsize=36)
 
     plt.show()
 
