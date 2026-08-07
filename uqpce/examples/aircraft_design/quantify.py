@@ -245,7 +245,7 @@ def main():
         promotes_outputs=['DOC:mean_plus_lambda_variance']
     )
 
-    uncertain_prob.model.add_objective('DOC:mean_plus_lambda_variance', ref=1.0)    
+    uncertain_prob.model.add_objective('DOC:mean_plus_lambda_variance', ref=120e3)    
     
     #---------------------------------------------------------------------------
     #                       Compute Model Response at 
@@ -285,22 +285,26 @@ def main():
     mean_response = response["DOC"]["mu"]
     variance_response = response["DOC"]["variance"]
 
-    uncertain_prob.set_val('DOC:mean_resp', mean_response)
-    uncertain_prob.set_val('DOC:var_resp', variance_response)
+    lambd_50 = mean_response/variance_response
 
-    #uncertain_prob.model.set_val('lambda', 0.11)
+    #vary lambda from 0.2 lambda_50 to 1.8 lambda_50
+
+    #uncertain_prob.set_val('DOC:mean_resp', mean_response)
+    #uncertain_prob.set_val('DOC:var_resp', variance_response)
+
+    #uncertain_prob.model.set_val('lambda', lambd_0)
 
     #uncertain_prob.run_driver()
 
     #optimized = get_values(uncertain_prob)
 
-    plot_pareto(uncertain_prob, optimal)
+    plot_pareto(uncertain_prob, lambd_50)
 
     #---------------------------------------------------------------------------
     #                  Plot Results and Compare Distributions              
     #---------------------------------------------------------------------------
 
-    print(uncertain_prob.get_val('R'))
+    #print(uncertain_prob.get_val('R'))
 
     #plot_objective(response, optimized)
 
