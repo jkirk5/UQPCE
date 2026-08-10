@@ -91,8 +91,8 @@ class CoupledDisciplines(om.Group):
         newton.options['err_on_non_converge'] = True
 
 
-        line_search = newton.linesearch = om.ArmijoGoldsteinLS(bound_enforcement='scalar')
-        line_search.options['maxiter'] = 20
+        line_search = newton.linesearch = om.ArmijoGoldsteinLS(bound_enforcement='vector')
+        line_search.options['maxiter'] = 100
         line_search.options['print_bound_enforce'] = True
         self.linear_solver = om.DirectSolver()
 

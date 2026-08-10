@@ -304,7 +304,7 @@ def plot_objective(dict_response, dict_optimized):
     ax[0].axvline(DOC_mu, color='red', linewidth=2,linestyle='-', 
                label=rf"$\mu_{{\mathrm{{resp}}}} \ \approx$ {DOC_mu:.4f}")
  
-    ax[0].hist(DOC_opt_dist,bins=70,density=True,color='blue',alpha=0.5,label="optimized probability distribution")
+    ax[0].hist(DOC_opt_dist,bins=70,density=True,color='blue',alpha=0.5,label=r"optimized probability distribution $(\lambda \approx 0.02)$")
     
     ax[0].axvline(DOC_opt_ci_lower, color='blue', linewidth=2,linestyle=':', 
                label=rf"CI lower $\approx$ {DOC_opt_ci_lower:.4f}")
@@ -327,7 +327,7 @@ def plot_objective(dict_response, dict_optimized):
     ax[1].axvline(Dpm_mu, color='red', linewidth=2,linestyle='-', 
                label=rf"$\mu_{{\mathrm{{resp}}}} \ \approx$ {Dpm_mu:.4f}")
  
-    ax[1].hist(Dpm_opt_dist,bins=70,density=True,color='blue',alpha=0.5,label="optimized probability distribution")
+    ax[1].hist(Dpm_opt_dist,bins=70,density=True,color='blue',alpha=0.5,label=r"optimized probability distribution $(\lambda \approx 0.02)$")
     
     ax[1].axvline(Dpm_opt_ci_lower, color='blue', linewidth=2,linestyle=':', 
                label=rf"CI lower $\approx$ {Dpm_opt_ci_lower:.4f}")
@@ -381,7 +381,7 @@ def plot_coefficients(dict_response, dict_optimized):
         fontsize=28
     )
   
-    ax[0].hist(CL_dist,bins=100,density=True,color='red',alpha=0.5,label="response at deterministic optima")
+    ax[0].hist(CL_dist,bins=70,density=True,color='red',alpha=0.5,label="response at deterministic optima")
     
     ax[0].axvline(CL_ci_lower, color='red', linewidth=2,linestyle=':', 
                label=rf"CI lower $\approx$ {CL_ci_lower:.4f}")
@@ -390,7 +390,7 @@ def plot_coefficients(dict_response, dict_optimized):
     ax[0].axvline(CL_mu, color='red', linewidth=2,linestyle='-', 
                label=rf"$\mu_{{\mathrm{{resp}}}} \ \approx$ {CL_mu:.4f}")
  
-    ax[0].hist(CL_opt_dist,bins=100,density=True,color='blue',alpha=0.5,label="optimized probability distribution")
+    ax[0].hist(CL_opt_dist,bins=70,density=True,color='blue',alpha=0.5,label=r"optimized probability distribution $(\lambda \approx 0.02)$")
     
     ax[0].axvline(CL_opt_ci_lower, color='blue', linewidth=2,linestyle=':', 
                label=rf"CI lower $\approx$ {CL_opt_ci_lower:.4f}")
@@ -404,7 +404,7 @@ def plot_coefficients(dict_response, dict_optimized):
     ax[0].set_title(rf"$C_L$ Distribution: $\sigma^2_{{\mathrm{{resp}}}} = {CL_variance:.4e}, \ \ \sigma^2_{{\mathrm{{opt}}}} = {CL_opt_variance:.4e}$",fontsize=24)
     ax[0].legend()
 
-    ax[1].hist(CD_dist,bins=100,density=True,color='red',alpha=0.5,label="response at deterministic optima")
+    ax[1].hist(CD_dist,bins=70,density=True,color='red',alpha=0.5,label="response at deterministic optima")
     
     ax[1].axvline(CD_ci_lower, color='red', linewidth=2,linestyle=':', 
                label=rf"CI lower $\approx$ {CD_ci_lower:.4f}")
@@ -413,7 +413,7 @@ def plot_coefficients(dict_response, dict_optimized):
     ax[1].axvline(CD_mu, color='red', linewidth=2,linestyle='-', 
                label=rf"$\mu_{{\mathrm{{resp}}}} \ \approx$ {CD_mu:.4f}")
  
-    ax[1].hist(CD_opt_dist,bins=100,density=True,color='blue',alpha=0.5,label="optimized probability distribution")
+    ax[1].hist(CD_opt_dist,bins=70,density=True,color='blue',alpha=0.5,label="optimized probability distribution $(\lambda \approx 0.02)$")
     
     ax[1].axvline(CD_opt_ci_lower, color='blue', linewidth=2,linestyle=':', 
                label=rf"CI lower $\approx$ {CD_opt_ci_lower:.4f}")
@@ -728,7 +728,10 @@ def plot_sfc(dict_response, dict_optimized):
 
     plt.show()
 
-def plot_pareto(uncertain_prob, optimal):
+def plot_pareto(uncertain_prob, lambd_50):
+
+    lambd_start = 0.2*lambd_50
+    lamb_end = 1.8*lambd_50
 
     plt.rcParams.update({
         "text.usetex" : True,
@@ -741,13 +744,13 @@ def plot_pareto(uncertain_prob, optimal):
 
     #ax_des = axes[1]
 
-    #n = np.linspace(0,20,5) #exponent
+    n = np.linspace(0,20,5) #exponent
 
     thet = np.linspace(0,np.pi/2.0,25)
 
-    lambd_end = 1.3
+    #lambd_end = 1.3
 
-    lambd = ((lambd_end) - (lambd_end)*np.cos(thet))
+    lambd =  np.linspace(lambd_start, lamb_end, 40)
 
     #lambd = (1.05**n) - 1.0
 
@@ -763,7 +766,7 @@ def plot_pareto(uncertain_prob, optimal):
     Design_AR_list = []
     Design_SFC_list = []
 
-    title_str = r"Pareto Front: $J = \frac{\mu}{\mu_{\mathrm{resp}}} + \lambda \frac{\sigma^2}{\sigma^2_{\mathrm{resp}}}$"
+    title_str = r"Pareto Front: $J = \mu + \lambda \sigma^2$"
     fig.suptitle(title_str,fontsize=36)
     fig.supxlabel(r"$\lambda$",fontsize=24)
 
