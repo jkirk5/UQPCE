@@ -413,7 +413,7 @@ def plot_coefficients(dict_response, dict_optimized):
     ax[1].axvline(CD_mu, color='red', linewidth=2,linestyle='-', 
                label=rf"$\mu_{{\mathrm{{resp}}}} \ \approx$ {CD_mu:.4f}")
  
-    ax[1].hist(CD_opt_dist,bins=70,density=True,color='blue',alpha=0.5,label="optimized probability distribution $(\lambda \approx 0.02)$")
+    ax[1].hist(CD_opt_dist,bins=70,density=True,color='blue',alpha=0.5,label=r"optimized probability distribution $(\lambda \approx 0.02)$")
     
     ax[1].axvline(CD_opt_ci_lower, color='blue', linewidth=2,linestyle=':', 
                label=rf"CI lower $\approx$ {CD_opt_ci_lower:.4f}")
@@ -784,8 +784,18 @@ def plot_pareto(uncertain_prob, lambd_50):
         
         optimized = get_values(uncertain_prob)
 
-        print("Uncertain\n")
-        print(optimized["Design"])
+        # print("Uncertain\n")
+        if lambd_val == lambd_50:
+            print(optimized["Design"])
+            print(optimized['DOC'])
+
+        if lambd_val == lambd_start:
+            print(optimized["Design"])
+            print(optimized['DOC'])
+
+        if lambd_val == lamb_end:
+            print(optimized["Design"])
+            print(optimized['DOC'])
 
         current_DOC_var = optimized["DOC"]["variance"]
         current_DOC_mu = optimized["DOC"]["mu"]

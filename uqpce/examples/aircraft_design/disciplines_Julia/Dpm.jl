@@ -13,8 +13,8 @@ function get_Dpm_ad(vector_size::Integer)
     ad_backend = ADTypes.AutoForwardDiff()
 
     inputs = ComponentVector(
-        R=fill(5.5e3, vector_size),
-        DOC=fill(40000.0, vector_size),
+        R=fill(1.0, vector_size),
+        DOC=fill(1.0, vector_size),
         N_pax=189.0
     )
 

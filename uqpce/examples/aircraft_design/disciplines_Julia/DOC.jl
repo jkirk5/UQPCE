@@ -13,14 +13,14 @@ function get_DOC_ad(vector_size::Integer)
     ad_backend = ADTypes.AutoForwardDiff()
 
     inputs = ComponentVector(
-        SFC_tech=0.0,
-        V_cruise=240.5,
-        R=fill(5.5e6, vector_size),
-        m_fuel=fill(16000.0, vector_size),
+        SFC_tech=1.0,
+        V_cruise=1.0,
+        R=fill(1.0, vector_size),
+        m_fuel=fill(1.0, vector_size),
         delta_Cf=fill(1.0, vector_size),
         delta_beta=fill(1.0, vector_size),
-        Cf_base=0.74,
-        beta_base=0.55,
+        Cf_base=1.0,
+        beta_base=1.0,
         C_time=0.472,
         k_acq=0.00142,
         C_eng_ref=2.2e7

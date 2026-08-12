@@ -47,25 +47,25 @@ function aero!(outputs,inputs,params)
     return nothing
 end
 
-
-function get_aero_comp(vec_size)
+function get_aero_comp(vec_size::Integer)
 
     ad_backend = ADTypes.AutoForwardDiff()
 
     inputs = ComponentVector(
-    S = 1.0, #Look here chat
-    V_cruise = 1.0, #look here chat
-    AR = 1.0, # look here chat
-    m_total =  ones(vec_size),
-    delta_CD0 =  ones(vec_size),
-    delta_ks = ones(vec_size),
-    delta_e =  ones(vec_size),
-    ks_base = 0.00029107,
-    e_base = 0.8,
-    C_D0_base = 0.022,
-    g = 9.81,
-    rho = 0.38,
-    S_0 = 124.58)
+        S = 1.0,
+        V_cruise = 1.0,
+        AR = 1.0,
+        m_total = ones(vec_size),
+        delta_CD0 = ones(vec_size),
+        delta_ks = ones(vec_size),
+        delta_e = ones(vec_size),
+        ks_base = 1.0,
+        e_base = 1.0,
+        C_D0_base = 1.0,
+        g = 9.81,
+        rho = 0.38,
+        S_0 = 124.58
+    )
 
     outputs = ComponentVector(
         CL = zeros(vec_size),
@@ -89,5 +89,4 @@ function get_aero_comp(vec_size)
 
     return OpenMDAOCore.DenseADExplicitComp(
         ad_backend, aero!, outputs, inputs, units_dict=units_dict)
-
 end

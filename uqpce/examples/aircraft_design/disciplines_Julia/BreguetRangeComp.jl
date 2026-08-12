@@ -13,11 +13,11 @@ function get_breguet_ad_comp(vec_size::Integer)
     ad_backend = ADTypes.AutoForwardDiff()
 
     X_ca = ComponentVector(
-        V_cruise=231.5,
-        SFC = fill(1.60e-4, vec_size),
-        LD = fill(16.0, vec_size),
-        m_total = fill(50000.0, vec_size),
-        m_fuel = fill(10000.0, vec_size)
+        V_cruise=1.0,
+        SFC = fill(1.0, vec_size),
+        LD = fill(1.0, vec_size),
+        m_total = fill(1.0, vec_size),
+        m_fuel = fill(1.0, vec_size)
     )
 
     units_dict = Dict(

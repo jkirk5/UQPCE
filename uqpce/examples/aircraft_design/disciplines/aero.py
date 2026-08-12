@@ -13,7 +13,7 @@ class AeroComp(om.ExplicitComponent):
         n = self.options['vec_size']
 
         #proposed design variables
-        self.add_input('S',  units="m**2")
+        self.add_input('S', units="m**2")
         self.add_input('V_cruise', units="m/s")
         self.add_input('AR', units="unitless")
        

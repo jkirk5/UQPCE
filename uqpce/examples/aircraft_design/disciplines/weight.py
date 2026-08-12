@@ -15,16 +15,16 @@ class WeightsComp(om.ExplicitComponent):
         #proposed design variables
         self.add_input('S', units='m**2')
         self.add_input('AR', units="unitless")
-        self.add_input('V_cruise',units='m/s')
+        self.add_input('V_cruise', units='m/s')
 
         #model variable (output from other component)
-        self.add_input('m_total',  units='kg', shape=(n,))
+        self.add_input('m_total', units='kg', shape=(n,))
         self.add_input('m_engine', units='kg', shape=(n,))
 
         #uncertain parameters
-        self.add_input("delta_kw",val=np.ones(n), units="unitless", shape=(n,)) 
-        self.add_input("delta_fsys",val=np.ones(n), units="unitless", shape=(n,))
-        self.add_input("delta_p",val=np.ones(n), units="unitless", shape=(n,))
+        self.add_input("delta_kw", val=np.ones(n), units="unitless", shape=(n,)) 
+        self.add_input("delta_fsys", val=np.ones(n), units="unitless", shape=(n,))
+        self.add_input("delta_p", val=np.ones(n), units="unitless", shape=(n,))
 
         #tuning parameters
         self.add_input('kw_base', units="unitless")
@@ -36,7 +36,7 @@ class WeightsComp(om.ExplicitComponent):
         self.add_input('m_fuse', val=parameters['m_fuse'], units='kg')
 
         #outputs
-        self.add_output('m_empty', units= 'kg', shape=(n,))
+        self.add_output('m_empty', units='kg', shape=(n,))
         self.add_output('m_wing', units='kg', shape=(n,))
 
     def setup_partials(self):

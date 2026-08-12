@@ -13,9 +13,9 @@ function get_engine_ad(vector_size::Integer)
     ad_backend = ADTypes.AutoForwardDiff()
 
     inputs = ComponentVector(
-        SFC_tech=0.0,
+        SFC_tech=1.0,
         m_eng_ref=8602.0,
-        alpha_base=0.345,
+        alpha_base=1.0,
         delta_alpha=fill(1.0, vector_size)
     )
 

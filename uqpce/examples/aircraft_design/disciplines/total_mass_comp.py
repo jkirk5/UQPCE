@@ -16,7 +16,7 @@ class TotalMassComp(om.ExplicitComponent):
         #n/a
 
         #model variable (output from other component)
-        self.add_input('m_empty', units='kg',shape=(n,))
+        self.add_input('m_empty', units='kg', shape=(n,))
         self.add_input('m_fuel', units='kg', shape=(n,))
 
         #uncertain parameters
