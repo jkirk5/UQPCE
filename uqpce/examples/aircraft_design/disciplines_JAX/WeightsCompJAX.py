@@ -24,25 +24,25 @@ class WeightsComp(om.JaxExplicitComponent):
     def setup(self):
         n = self.options["vec_size"]
 
-        self.add_input("S", val=parameters["S_naught"], units="m**2")
-        self.add_input("AR", val=parameters["b"] ** 2 / parameters["S_naught"], units="unitless")
-        self.add_input("V_cruise", val=parameters["V_ref"], units="m/s")
+        self.add_input("S", units="m**2")
+        self.add_input("AR", units="unitless")
+        self.add_input("V_cruise", units="m/s")
 
-        self.add_input("m_total", val=50000.0, shape=(n,), units="kg")
-        self.add_input("m_engine", val=parameters["m_eng_ref"], shape=(n,), units="kg")
+        self.add_input("m_total", shape=(n,), units="kg")
+        self.add_input("m_engine", shape=(n,), units="kg")
 
-        self.add_input("delta_kw", val=1.0, shape=(n,), units="unitless")
-        self.add_input("delta_fsys", val=1.0, shape=(n,), units="unitless")
-        self.add_input("delta_p", val=1.0, shape=(n,), units="unitless")
+        self.add_input("delta_kw", val=jnp.ones(n), shape=(n,), units="unitless")
+        self.add_input("delta_fsys", val=jnp.ones(n), shape=(n,), units="unitless")
+        self.add_input("delta_p", val=jnp.ones(n), shape=(n,), units="unitless")
 
-        self.add_input("kw_base", val=tuning["kw_base"], units="unitless")
-        self.add_input("fsys_base", val=tuning["fsys_base"], units="unitless")
-        self.add_input("p_base", val=tuning["p_base"], units="unitless")
+        self.add_input("kw_base", units="unitless")
+        self.add_input("fsys_base", units="unitless")
+        self.add_input("p_base", units="unitless")
         self.add_input("V_ref", val=parameters["V_ref"], units="m/s")
         self.add_input("m_fuse", val=parameters["m_fuse"], units="kg")
 
-        self.add_output("m_empty", val=0.0, shape=(n,), units="kg")
-        self.add_output("m_wing", val=0.0, shape=(n,), units="kg")
+        self.add_output("m_empty", shape=(n,), units="kg")
+        self.add_output("m_wing", shape=(n,), units="kg")
 
     def compute_primal(
         self,

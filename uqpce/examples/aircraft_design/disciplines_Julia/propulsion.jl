@@ -86,10 +86,10 @@ function get_prop_ad(vector_size::Integer)
     ad_backend = ADTypes.AutoForwardDiff()
 
     inputs = ComponentVector(
-        SFC_tech=0.0,
-        V_cruise=240.5,
-        eta_base=0.4,
-        kv_base=601.0,
+        SFC_tech=1.0,
+        V_cruise=1.0,
+        eta_base=1.0,
+        kv_base=1.0,
         delta_eta=fill(1.0, vector_size),
         delta_kv=fill(1.0, vector_size),
         SFC_ref=1.6e-4,

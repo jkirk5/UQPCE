@@ -19,10 +19,10 @@ class EngineWeightComp(om.JaxExplicitComponent):
         #n/a
 
         #uncertain parameters
-        self.add_input('delta_alpha', val=1.0, shape=(n,))
+        self.add_input('delta_alpha', val=1.0, units='unitless', shape=(n,))
         
         #tuning parameters
-        self.add_input('alpha_base')
+        self.add_input('alpha_base', units='unitless')
 
         #constant parameters
         self.add_input('m_eng_ref', val=parameters['m_eng_ref'], units='kg')
