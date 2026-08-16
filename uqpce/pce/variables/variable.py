@@ -79,8 +79,8 @@ class Variable():
             the number of points needed to be generated
         """
         from scipy.stats.qmc import LatinHypercube
-        sampler = LatinHypercube(d=1)
-        samps = sampler.random(n=count)
+        sampler = LatinHypercube(d=1, rng=np.random.default_rng(seed=30))
+        samps = np.random.uniform(size=count)
 
         vals = self.cdf_sample(samps)
 

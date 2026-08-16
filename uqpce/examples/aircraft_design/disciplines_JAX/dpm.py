@@ -1,5 +1,6 @@
 import openmdao.api as om
 import jax.numpy as jnp
+import numpy as np
 from fixed import parameters
 
 class Dpm(om.JaxExplicitComponent):
@@ -30,6 +31,13 @@ class Dpm(om.JaxExplicitComponent):
 
         #outputs
         self.add_output('Dpm', shape=(n,))
+
+    def setup_partials(self):
+        n = self.options['vec_size']
+        arange = np.arange(n)
+
+        self.declare_partials(of='Dpm', wrt=['DOC', 'R'], rows=arange, cols=arange)
+        self.declare_partials(of='Dpm', wrt=['N_pax'])
 
     def compute_primal(self, DOC, R, N_pax):
         """

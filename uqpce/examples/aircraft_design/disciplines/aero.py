@@ -38,8 +38,8 @@ class AeroComp(om.ExplicitComponent):
         #outputs
         self.add_output('CL',units="unitless",shape=(n,))
         self.add_output('CD',units="unitless",shape=(n,))
-        self.add_output('LD',units="unitless",shape=(n,))
-        self.add_output('WL',units="N/m**2",shape=(n,))
+        self.add_output('LD',units="unitless",shape=(n,), res_ref=10.0)
+        self.add_output('WL',units="N/m**2",shape=(n,), res_ref=5.0e3)
 
     
     def setup_partials(self):

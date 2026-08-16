@@ -2,6 +2,8 @@ using OpenMDAOCore: OpenMDAOCore
 using ComponentArrays: ComponentVector
 using ADTypes: ADTypes
 using ForwardDiff: ForwardDiff
+using SparseMatrixColorings: SparseMatrixColorings
+using SparseConnectivityTracer: SparseConnectivityTracer
 
 function WeightsComp(X_ca, params)
     m_wing = (X_ca.kw_base .* X_ca.delta_kw .* X_ca.S^0.758 .* X_ca.AR^0.6 .* X_ca.m_total .^ 0.006 .* (X_ca.V_cruise/ X_ca.V_ref).^(X_ca.p_base .* X_ca.delta_p))
@@ -11,7 +13,11 @@ function WeightsComp(X_ca, params)
 end
 
 function get_weights_ad_comp(vec_size:: Integer)
-    ad_backend = ADTypes.AutoForwardDiff()
+    ad_backend = ADTypes.AutoSparse(
+        ADTypes.AutoForwardDiff(),
+        sparsity_detector=SparseConnectivityTracer.TracerSparsityDetector(),
+        coloring_algorithm=SparseMatrixColorings.GreedyColoringAlgorithm(),
+    )
 
     X_ca = ComponentVector(
         S = 1.0,
@@ -43,7 +49,7 @@ function get_weights_ad_comp(vec_size:: Integer)
         :m_wing => "kg",
     )
 
-    return OpenMDAOCore.DenseADExplicitComp(
+    return OpenMDAOCore.SparseADExplicitComp(
         ad_backend,
         WeightsComp,
         X_ca,

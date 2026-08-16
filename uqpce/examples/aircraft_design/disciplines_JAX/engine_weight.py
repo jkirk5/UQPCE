@@ -1,5 +1,6 @@
 import openmdao.api as om
 import jax.numpy as jnp
+import numpy as np
 from fixed import parameters
 
 class EngineWeightComp(om.JaxExplicitComponent):
@@ -29,6 +30,13 @@ class EngineWeightComp(om.JaxExplicitComponent):
 
         #outputs
         self.add_output('m_engine', units='kg', desc='Engine mass', shape=(n,))
+
+    def setup_partials(self):
+        n = self.options['vec_size']
+        arange = np.arange(n)
+
+        self.declare_partials(of='m_engine', wrt=['delta_alpha'], rows=arange, cols=arange)
+        self.declare_partials(of='m_engine', wrt=['SFC_tech', 'alpha_base', 'm_eng_ref'])
 
     def compute_primal(self, SFC_tech, delta_alpha, alpha_base, m_eng_ref):
         """

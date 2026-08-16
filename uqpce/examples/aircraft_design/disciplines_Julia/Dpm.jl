@@ -2,6 +2,8 @@ using OpenMDAOCore: OpenMDAOCore
 using ComponentArrays: ComponentVector
 using ADTypes: ADTypes
 using ForwardDiff: ForwardDiff
+using SparseMatrixColorings: SparseMatrixColorings
+using SparseConnectivityTracer: SparseConnectivityTracer
 
 function Dpm_ad(inputs, params)
     Dpm_out = ComponentVector(Dpm=inputs.DOC ./ (inputs.N_pax .* inputs.R))
@@ -10,7 +12,11 @@ function Dpm_ad(inputs, params)
 end
 
 function get_Dpm_ad(vector_size::Integer)
-    ad_backend = ADTypes.AutoForwardDiff()
+    ad_backend = ADTypes.AutoSparse(
+        ADTypes.AutoForwardDiff(),
+        sparsity_detector=SparseConnectivityTracer.TracerSparsityDetector(),
+        coloring_algorithm=SparseMatrixColorings.GreedyColoringAlgorithm(),
+    )
 
     inputs = ComponentVector(
         R=fill(1.0, vector_size),
@@ -20,7 +26,7 @@ function get_Dpm_ad(vector_size::Integer)
 
     units_dict = Dict(:R=>"km", :DOC=>"USD")
 
-    comp = OpenMDAOCore.DenseADExplicitComp(ad_backend, Dpm_ad, inputs; units_dict=units_dict)
+    comp = OpenMDAOCore.SparseADExplicitComp(ad_backend, Dpm_ad, inputs; units_dict=units_dict)
     
     return comp
 end

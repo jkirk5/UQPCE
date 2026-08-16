@@ -1,5 +1,6 @@
 import jax
 import jax.numpy as jnp
+import numpy as np
 import openmdao.api as om
 
 from fixed import parameters
@@ -38,12 +39,21 @@ class AeroCompJax(om.JaxExplicitComponent):
         #outputs
         self.add_output('CL',units="unitless",shape=(n,))
         self.add_output('CD',units="unitless",shape=(n,))
-        self.add_output('LD',units="unitless",shape=(n,))
-        self.add_output('WL',units="N/m**2",shape=(n,))
+        self.add_output('LD',units="unitless",shape=(n,), res_ref=10.0)
+        self.add_output('WL',units="N/m**2",shape=(n,), res_ref=5.0e3)
 
-    #jax assigns inputs to each of the follwing var names in args
-    #in the order they appear in setup
-    #as a result its best to just keep the names the same I guess
+    def setup_partials(self):
+        n = self.options['vec_size']
+        arange = np.arange(n)
+
+        vec_wrt = ['m_total', 'delta_CD0', 'delta_ks', 'delta_e']
+        scalar_wrt = ['S', 'V_cruise', 'AR', 'ks_base', 'e_base',
+                      'C_D0_base', 'g', 'rho', 'S_0']
+        
+        for of in ('CL', 'CD', 'LD', 'WL'):
+            self.declare_partials(of=of, wrt=vec_wrt, rows=arange, cols=arange)
+            self.declare_partials(of=of, wrt=scalar_wrt)
+
     def compute_primal(self,
                        S, V_cruise, AR,
                        m_total,

@@ -2,6 +2,8 @@ using ADTypes: ADTypes
 using ComponentArrays: ComponentVector
 using ForwardDiff: ForwardDiff
 using OpenMDAOCore: OpenMDAOCore
+using SparseMatrixColorings: SparseMatrixColorings
+using SparseConnectivityTracer: SparseConnectivityTracer
 
 function aero!(outputs,inputs,params)
     
@@ -48,8 +50,12 @@ function aero!(outputs,inputs,params)
 end
 
 function get_aero_comp(vec_size::Integer)
-
-    ad_backend = ADTypes.AutoForwardDiff()
+    
+    ad_backend = ADTypes.AutoSparse(
+        ADTypes.AutoForwardDiff(),
+        sparsity_detector=SparseConnectivityTracer.TracerSparsityDetector(),
+        coloring_algorithm=SparseMatrixColorings.GreedyColoringAlgorithm(),
+    )
 
     inputs = ComponentVector(
         S = 1.0,
@@ -87,6 +93,6 @@ function get_aero_comp(vec_size::Integer)
     :LD        => "unitless"
     )
 
-    return OpenMDAOCore.DenseADExplicitComp(
+    return OpenMDAOCore.SparseADExplicitComp(
         ad_backend, aero!, outputs, inputs, units_dict=units_dict)
 end

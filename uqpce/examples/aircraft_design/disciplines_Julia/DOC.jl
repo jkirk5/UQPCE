@@ -2,6 +2,8 @@ using OpenMDAOCore: OpenMDAOCore
 using ComponentArrays: ComponentVector
 using ADTypes: ADTypes
 using ForwardDiff: ForwardDiff
+using SparseMatrixColorings: SparseMatrixColorings
+using SparseConnectivityTracer: SparseConnectivityTracer
 
 function DOC_ad(inputs, params)
     DOC_out = ComponentVector(DOC=inputs.Cf_base .* inputs.delta_Cf .* inputs.m_fuel .+ inputs.C_time .* (inputs.R ./ inputs.V_cruise) .+ inputs.k_acq .* inputs.C_eng_ref .* (1 .+ inputs.beta_base .* inputs.delta_beta .* inputs.SFC_tech))
@@ -10,7 +12,11 @@ function DOC_ad(inputs, params)
 end
 
 function get_DOC_ad(vector_size::Integer)
-    ad_backend = ADTypes.AutoForwardDiff()
+    ad_backend = ADTypes.AutoSparse(
+        ADTypes.AutoForwardDiff(),
+        sparsity_detector=SparseConnectivityTracer.TracerSparsityDetector(),
+        coloring_algorithm=SparseMatrixColorings.GreedyColoringAlgorithm(),
+    )
 
     inputs = ComponentVector(
         SFC_tech=1.0,
@@ -28,7 +34,7 @@ function get_DOC_ad(vector_size::Integer)
 
     units_dict = Dict(:V_cruise=>"m/s", :R=>"m", :m_fuel=>"kg", :Cf_base=>"USD/kg", :C_time=>"USD/s", :C_eng_ref=>"USD", :DOC=>"USD")
 
-    comp = OpenMDAOCore.DenseADExplicitComp(ad_backend, DOC_ad, inputs; units_dict=units_dict)
+    comp = OpenMDAOCore.SparseADExplicitComp(ad_backend, DOC_ad, inputs; units_dict=units_dict)
     
     return comp
 end
