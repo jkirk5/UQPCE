@@ -1,5 +1,8 @@
 import openmdao.api as om
 import os
+import numpy as np
+import cProfile
+import time
 
 from uqpce.mdao.uqpcegroup import UQPCEGroup
 from uqpce.mdao import interface
@@ -29,7 +32,7 @@ def deterministic_optimization(prob):
     prob.model.add_constraint('CL', upper=0.6055, ref=0.1)
     # determ_prob.model.add_constraint('WL_constraint', lower=-5905, upper=5905, ref=0.1)
 
-    prob.setup(force_alloc_complex=True)
+    prob.setup()
     initialize(prob)
 
     prob.run_driver()
@@ -145,6 +148,8 @@ class Uncertain_Objective(om.ExplicitComponent):
         partials['DOC:mean_plus_lambda_variance','DOC:var_resp'] = -lambd * (var/var_resp**2)
 
 def main():
+    np.random.seed(0)
+
     #---------------------------------------------------------------------------
     #                      Run Deterministic Optimization
     #---------------------------------------------------------------------------
@@ -257,7 +262,7 @@ def main():
     #                         Deterministic Optima      
     #---------------------------------------------------------------------------
 
-    uncertain_prob.setup(force_alloc_complex=True)
+    uncertain_prob.setup()
 
     initialize(uncertain_prob, params=optimal)
     
@@ -323,9 +328,9 @@ def main():
 
     # print(uncertain_prob.get_val('R'))
 
-    plot_objective(response, optimized)
+    # plot_objective(response, optimized)
 
-    plot_coefficients(response, optimized)
+    # plot_coefficients(response, optimized)
     
     # plot_constraints(response, optimized)
 
@@ -338,4 +343,16 @@ def main():
     #print(optimized["Design"])
 
 if __name__ == "__main__":
+    # cProfile.run('main()', sort='tottime')
+    start1 = time.perf_counter()
     main()
+    end1 = time.perf_counter()
+
+    start2 = time.perf_counter()
+    main()
+    end2 = time.perf_counter()
+
+    time1 = end1 - start1
+    time2 = end2 - start2
+    print(f"Time 1: {time1:.6f} s")
+    print(f"Time 2: {time2:.6f} s")

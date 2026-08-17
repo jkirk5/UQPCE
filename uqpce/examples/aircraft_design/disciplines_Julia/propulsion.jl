@@ -75,6 +75,8 @@ end
 using ComponentArrays: ComponentVector
 using ADTypes: ADTypes
 using ForwardDiff: ForwardDiff
+using SparseMatrixColorings: SparseMatrixColorings
+using SparseConnectivityTracer: SparseConnectivityTracer
 
 function propulsion_ad(inputs, params)
     SFC_out = ComponentVector(SFC=inputs.SFC_ref .* (1 .- inputs.eta_base .* inputs.delta_eta .* inputs.SFC_tech) .* (1 .+ inputs.kv_base .* inputs.delta_kv .* (inputs.V_cruise ./ inputs.V_ref .- 1).^2))
@@ -83,7 +85,11 @@ function propulsion_ad(inputs, params)
 end
 
 function get_prop_ad(vector_size::Integer)
-    ad_backend = ADTypes.AutoForwardDiff()
+    ad_backend = ADTypes.AutoSparse(
+        ADTypes.AutoForwardDiff(),
+        sparsity_detector=SparseConnectivityTracer.TracerSparsityDetector(),
+        coloring_algorithm=SparseMatrixColorings.GreedyColoringAlgorithm(),
+    )
 
     inputs = ComponentVector(
         SFC_tech=1.0,
@@ -98,7 +104,7 @@ function get_prop_ad(vector_size::Integer)
 
     units_dict = Dict(:V_cruise=>"m/s", :SFC_ref=>"1/s", :V_ref=>"m/s", :SFC=>"1/s")
 
-    comp = OpenMDAOCore.DenseADExplicitComp(ad_backend, propulsion_ad, inputs; units_dict=units_dict)
+    comp = OpenMDAOCore.SparseADExplicitComp(ad_backend, propulsion_ad, inputs; units_dict=units_dict)
     
     return comp
 end

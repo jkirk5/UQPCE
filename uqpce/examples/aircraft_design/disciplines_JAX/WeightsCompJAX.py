@@ -1,5 +1,6 @@
 import openmdao.api as om
 import jax.numpy as jnp
+import numpy as np
 
 from fixed import parameters, tuning
 
@@ -41,8 +42,17 @@ class WeightsComp(om.JaxExplicitComponent):
         self.add_input("V_ref", val=parameters["V_ref"], units="m/s")
         self.add_input("m_fuse", val=parameters["m_fuse"], units="kg")
 
-        self.add_output("m_empty", shape=(n,), units="kg")
-        self.add_output("m_wing", shape=(n,), units="kg")
+        self.add_output("m_empty", shape=(n,), units="kg", res_ref=1.0e4)
+        self.add_output("m_wing", shape=(n,), units="kg", res_ref=1.0e3)
+
+    def setup_partials(self):
+        n = self.options['vec_size']
+        arange = np.arange(n)
+
+        self.declare_partials(of='m_empty', wrt=['m_total', 'm_engine', 'delta_kw', 'delta_fsys', 'delta_p'], rows=arange, cols=arange)
+        self.declare_partials(of='m_empty', wrt=['S', 'AR', 'V_cruise', 'kw_base', 'fsys_base', 'p_base', 'V_ref', 'm_fuse'])
+        self.declare_partials(of='m_wing', wrt=['m_total', 'm_engine', 'delta_kw', 'delta_fsys', 'delta_p'], rows=arange, cols=arange)
+        self.declare_partials(of='m_wing', wrt=['S', 'AR', 'V_cruise', 'kw_base', 'fsys_base', 'p_base', 'V_ref', 'm_fuse'])
 
     def compute_primal(
         self,

@@ -1,5 +1,6 @@
 import openmdao.api as om
 import jax.numpy as jnp
+import numpy as np
 from fixed import parameters
 
 class DOC(om.JaxExplicitComponent):
@@ -35,6 +36,13 @@ class DOC(om.JaxExplicitComponent):
 
         #outputs
         self.add_output('DOC', units='USD', shape=(n,))
+
+    def setup_partials(self):
+        n = self.options['vec_size']
+        arange = np.arange(n)
+
+        self.declare_partials(of='DOC', wrt=['R', 'm_fuel', 'delta_Cf', 'delta_beta'], rows=arange, cols=arange)
+        self.declare_partials(of='DOC', wrt=['SFC_tech', 'V_cruise', 'Cf_base', 'beta_base', 'C_time', 'k_acq', 'C_eng_ref'])
        
     def compute_primal(self, SFC_tech, V_cruise, R, m_fuel, delta_Cf, delta_beta, Cf_base, beta_base, C_time, k_acq, C_eng_ref):
         """

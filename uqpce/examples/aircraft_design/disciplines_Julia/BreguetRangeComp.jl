@@ -2,6 +2,8 @@ using OpenMDAOCore: OpenMDAOCore
 using ComponentArrays: ComponentVector
 using ADTypes: ADTypes
 using ForwardDiff: ForwardDiff
+using SparseMatrixColorings: SparseMatrixColorings
+using SparseConnectivityTracer: SparseConnectivityTracer
 
 function BreguetRangeComp(X_ca, params)
     R = ((X_ca.V_cruise ./ X_ca.SFC) .* X_ca.LD .* log.(X_ca.m_total ./ (X_ca.m_total .- X_ca.m_fuel)))
@@ -10,7 +12,11 @@ function BreguetRangeComp(X_ca, params)
 end
 
 function get_breguet_ad_comp(vec_size::Integer)
-    ad_backend = ADTypes.AutoForwardDiff()
+    ad_backend = ADTypes.AutoSparse(
+        ADTypes.AutoForwardDiff(),
+        sparsity_detector=SparseConnectivityTracer.TracerSparsityDetector(),
+        coloring_algorithm=SparseMatrixColorings.GreedyColoringAlgorithm(),
+    )
 
     X_ca = ComponentVector(
         V_cruise=1.0,
@@ -28,7 +34,7 @@ function get_breguet_ad_comp(vec_size::Integer)
         :R => "m",
     )
 
-    return OpenMDAOCore.DenseADExplicitComp(
+    return OpenMDAOCore.SparseADExplicitComp(
         ad_backend,
         BreguetRangeComp,
         X_ca;
